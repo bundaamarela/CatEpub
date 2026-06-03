@@ -283,6 +283,61 @@
   gap: 0.2rem;
 }
 
+.exportBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.exportBtn:hover:not(:disabled) {
+  border-color: var(--text);
+}
+
+.exportBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.progressBar {
+  margin-top: 0.5rem;
+  height: 4px;
+  width: 100%;
+  border-radius: 2px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--text);
+  transition: width 0.2s ease;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.checkboxRow input {
+  accent-color: var(--text);
+}
+
 .kbd kbd {
   display: inline-block;
   padding: 0.1em 0.45em;

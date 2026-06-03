@@ -1,4 +1,4 @@
-import { type CSSProperties, type FC, type ReactNode, useEffect, useState } from 'react';
+import { type CSSProperties, type FC, type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useShallow } from 'zustand/shallow';
 
 import { LibraryFolderSection } from '@/components/settings/LibraryFolderSection';
@@ -78,6 +78,59 @@ const ToggleRow: FC<ToggleRowProps> = ({ label, checked, onChange, children }) =
     {children}
   </div>
 );
+
+const SovereigntySection: FC = () => {
+  const [includeEpubs, setIncludeEpubs] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const handleExport = useCallback(async () => {
+    setExporting(true);
+    setProgress(0);
+    try {
+      const { exportArsenal, downloadBlob } = await import('@/lib/knowledge/export');
+      const blob = await exportArsenal({ includeEpubs, onProgress: setProgress });
+      const date = new Date().toISOString().slice(0, 10);
+      downloadBlob(blob, `cat-epub-arsenal-${date}.zip`);
+    } finally {
+      setTimeout(() => {
+        setExporting(false);
+        setProgress(0);
+      }, 500);
+    }
+  }, [includeEpubs]);
+
+  return (
+    <div className={cn(styles.card)}>
+      <h2 className={cn(styles.cardTitle)}>Soberania de Dados</h2>
+      <label className={cn(styles.checkboxRow)}>
+        <input
+          type="checkbox"
+          checked={includeEpubs}
+          onChange={(e) => setIncludeEpubs(e.target.checked)}
+        />
+        Incluir ficheiros EPUB
+      </label>
+      <button
+        type="button"
+        className={cn(styles.exportBtn)}
+        disabled={exporting}
+        onClick={() => void handleExport()}
+      >
+        {exporting ? 'A exportar…' : 'Exportar arsenal completo'}
+      </button>
+      {exporting && (
+        <div className={cn(styles.progressBar)}>
+          <div className={cn(styles.progressFill)} style={{ width: `${progress}%` }} />
+        </div>
+      )}
+      <p className={cn(styles.notice)}>
+        Gera um ficheiro ZIP com todas as notas em Markdown, highlights, flashcards e metadados.
+        Compatível com Obsidian, Logseq e qualquer editor de texto.
+      </p>
+    </div>
+  );
+};
 
 const Settings: FC = () => {
   const p = usePrefs(
@@ -336,6 +389,8 @@ const Settings: FC = () => {
           )}
         </ToggleRow>
       </div>
+
+      <SovereigntySection />
 
       <LibraryFolderSection />
 
