@@ -19,6 +19,8 @@ export interface Book {
   tags: string[];
   rating?: number; // 0–5
   description?: string;
+  series?: string;
+  volume?: number;
   addedAt: string; // ISO
   lastReadAt?: string;
   finishedAt?: string;

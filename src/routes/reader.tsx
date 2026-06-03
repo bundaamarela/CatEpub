@@ -7,6 +7,7 @@ import { ulid } from 'ulid';
 import { AiPopover, type PopoverPosition } from '@/components/reader/AiPopover';
 import { FocusCheckinDialog } from '@/components/reader/FocusCheckinDialog';
 import { HighlightToolbar, type HighlightSelection } from '@/components/reader/HighlightToolbar';
+import { MetadataEditor } from '@/components/library/MetadataEditor';
 import { PanelChat } from '@/components/reader/PanelChat';
 import { PanelNotes } from '@/components/reader/PanelNotes';
 import { PanelOverlay } from '@/components/reader/PanelOverlay';
@@ -135,6 +136,7 @@ const Reader = () => {
   const [chromeVisible, setChromeVisible] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
+  const [editingMetadata, setEditingMetadata] = useState(false);
   const [selection, setSelection] = useState<HighlightSelection | null>(null);
   const [showCheckin, setShowCheckin] = useState(false);
   const [bookToc, setBookToc] = useState<ReadonlyArray<FoliateTOCItem>>([]);
@@ -672,6 +674,7 @@ const Reader = () => {
           onToggleSettings={() => setPanel(panel === 'settings' ? null : 'settings')}
           onToggleTts={handleToggleTts}
           ttsActive={ttsActive}
+          onEditMetadata={() => setEditingMetadata(true)}
         />
       )}
 
@@ -802,6 +805,10 @@ const Reader = () => {
       )}
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
+
+      {editingMetadata && (
+        <MetadataEditor book={book} onClose={() => setEditingMetadata(false)} />
+      )}
     </div>
   );
 };

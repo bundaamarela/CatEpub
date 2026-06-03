@@ -164,6 +164,16 @@
   white-space: nowrap;
 }
 
+.gridSeries {
+  font-size: 0.68rem;
+  color: var(--text-3);
+  margin: 0 0 0.4rem;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .gridProgress {
   margin-top: 0.4rem;
 }
@@ -193,8 +203,23 @@
   display: none;
 }
 
+.gridEdit {
+  position: absolute;
+  top: 0.4rem;
+  right: 2.2rem;
+  padding: 0.3rem;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: none;
+}
+
 .gridItem:hover .gridDelete,
-.gridItem:focus-within .gridDelete {
+.gridItem:focus-within .gridDelete,
+.gridItem:hover .gridEdit,
+.gridItem:focus-within .gridEdit {
   display: inline-flex;
 }
 
@@ -298,7 +323,8 @@
   white-space: nowrap;
 }
 
-.listDelete {
+.listDelete,
+.listEdit {
   background: none;
   border: none;
   color: var(--text-3);
@@ -307,7 +333,8 @@
   border-radius: 6px;
 }
 
-.listDelete:hover {
+.listDelete:hover,
+.listEdit:hover {
   color: var(--text);
   background: var(--border);
 }

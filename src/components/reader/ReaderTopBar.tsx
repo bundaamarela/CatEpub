@@ -5,6 +5,7 @@ import {
   ChatIcon,
   ChevronLeftIcon,
   HeadphonesIcon,
+  MoreIcon,
   NotesIcon,
   PauseIcon,
   SearchIcon,
@@ -29,6 +30,7 @@ interface Props {
   onToggleSettings?: () => void;
   onToggleTts?: () => void;
   ttsActive?: boolean;
+  onEditMetadata?: () => void;
 }
 
 // Prevents focus from moving to the button on click — keeps focus on the reader
@@ -48,6 +50,7 @@ export const ReaderTopBar: FC<Props> = ({
   onToggleSettings,
   onToggleTts,
   ttsActive = false,
+  onEditMetadata,
 }) => {
   const navigate = useNavigate();
 
@@ -126,6 +129,18 @@ export const ReaderTopBar: FC<Props> = ({
             data-testid="toggle-tts"
           >
             {ttsActive ? <PauseIcon size={20} /> : <HeadphonesIcon size={20} />}
+          </button>
+        )}
+        {onEditMetadata && (
+          <button
+            type="button"
+            className={cn(styles.iconButton)}
+            onMouseDown={noFocus}
+            onClick={onEditMetadata}
+            aria-label="Editar metadados"
+            data-testid="edit-metadata"
+          >
+            <MoreIcon size={20} />
           </button>
         )}
         {onToggleSettings && (
