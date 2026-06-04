@@ -7,6 +7,7 @@ import {
   ReviewIcon,
   SearchIcon,
   SettingsIcon,
+  SynthesisIcon,
 } from '@/components/icons';
 import type { ComponentType, SVGProps } from 'react';
 
@@ -24,6 +25,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: '/review', label: 'Revisão', icon: ReviewIcon },
   { to: '/graph', label: 'Grafo', icon: GraphIcon },
   { to: '/concepts', label: 'Conceitos', icon: ConceptsIcon },
+  { to: '/synthesis', label: 'Síntese', icon: SynthesisIcon },
   { to: '/settings', label: 'Definições', icon: SettingsIcon },
 ];
 
