@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import * as d3 from 'd3';
 
 import { CatEmpty } from '@/components/icons';
+import { isAiEnabled } from '@/lib/ai/client';
+import {
+  detectContradictions,
+  type Contradiction,
+  type ContradictionVerdict,
+} from '@/lib/knowledge/contradictions';
 import { buildSemanticEdges, type Edge, type GraphNode } from '@/lib/knowledge/graph';
 import { useAllHighlights } from '@/lib/store/highlights';
 import { useBooks } from '@/lib/store/library';
@@ -38,6 +44,8 @@ const Graph = () => {
   const [threshold, setThreshold] = useState(0.78);
   const [filterBookId, setFilterBookId] = useState<string>('');
   const [graphData, setGraphData] = useState<{ nodes: GraphNode[]; edges: Edge[] } | null>(null);
+  const [contradictions, setContradictions] = useState<Contradiction[]>([]);
+  const [detectingContradictions, setDetectingContradictions] = useState(false);
 
   const allBooks: ReadonlyArray<Book> = useMemo(() => booksQuery.data ?? [], [booksQuery.data]);
   const allHighlights: ReadonlyArray<Highlight> = useMemo(
@@ -80,6 +88,28 @@ const Graph = () => {
     })();
   }, [allHighlights, allBooks, threshold, computing]);
 
+  const contradictionMap = useMemo(() => {
+    const map = new Map<string, ContradictionVerdict>();
+    for (const c of contradictions) {
+      const key = [c.highlightA.id, c.highlightB.id].sort().join('::');
+      map.set(key, c.verdict);
+    }
+    return map;
+  }, [contradictions]);
+
+  const handleDetectContradictions = useCallback(() => {
+    if (detectingContradictions || graphData === null) return;
+    setDetectingContradictions(true);
+
+    void (async () => {
+      const visibleIds = new Set(graphData.nodes.map((n) => n.id));
+      const visibleHighlights = allHighlights.filter((h) => visibleIds.has(h.id));
+      const found = await detectContradictions(visibleHighlights, allBooks);
+      setContradictions(found);
+      setDetectingContradictions(false);
+    })();
+  }, [detectingContradictions, graphData, allHighlights, allBooks]);
+
   const filteredData = useMemo(() => {
     if (graphData === null) return null;
     if (filterBookId === '') return graphData;
@@ -117,7 +147,23 @@ const Graph = () => {
     sel.call(zoom);
 
     type SimNode = GraphNode & d3.SimulationNodeDatum;
-    type SimLink = { source: SimNode; target: SimNode; similarity: number };
+    type SimLink = {
+      source: SimNode;
+      target: SimNode;
+      similarity: number;
+      verdict: ContradictionVerdict | null;
+    };
+
+    const verdictFor = (aId: string, bId: string): ContradictionVerdict | null => {
+      const key = [aId, bId].sort().join('::');
+      return contradictionMap.get(key) ?? null;
+    };
+
+    const verdictStroke = (v: ContradictionVerdict | null): string => {
+      if (v === 'contradict') return '#c75050';
+      if (v === 'tension') return '#d0903a';
+      return 'var(--border-strong)';
+    };
 
     const simNodes: SimNode[] = filteredData.nodes.map((n) => ({ ...n }));
     const nodeMap = new Map(simNodes.map((n) => [n.id, n]));
@@ -127,7 +173,12 @@ const Graph = () => {
       const s = nodeMap.get(e.sourceId);
       const t = nodeMap.get(e.targetId);
       if (s !== undefined && t !== undefined) {
-        simLinks.push({ source: s, target: t, similarity: e.similarity });
+        simLinks.push({
+          source: s,
+          target: t,
+          similarity: e.similarity,
+          verdict: verdictFor(e.sourceId, e.targetId),
+        });
       }
     }
 
@@ -141,6 +192,8 @@ const Graph = () => {
       .selectAll('line')
       .data(simLinks)
       .join('line')
+      .attr('stroke', (d) => verdictStroke(d.verdict))
+      .attr('stroke-opacity', (d) => (d.verdict === null ? 0.5 : 0.9))
       .attr('stroke-width', (d) => 0.5 + d.similarity * 2);
 
     const node = g.append('g')
@@ -205,7 +258,7 @@ const Graph = () => {
     return () => {
       simulation.stop();
     };
-  }, [filteredData, bookIds, allHighlights, navigate]);
+  }, [filteredData, bookIds, allHighlights, navigate, contradictionMap]);
 
   if (allHighlights.length < 10) {
     return (
@@ -287,6 +340,21 @@ const Graph = () => {
               setGraphData(null);
             }}
           />
+          {isAiEnabled() && (
+            <button
+              type="button"
+              className={cn(styles.detectBtn)}
+              onClick={handleDetectContradictions}
+              disabled={detectingContradictions || graphData === null}
+              title="Pede à IA para avaliar pares semanticamente próximos com semanticTag=argue"
+            >
+              {detectingContradictions
+                ? 'A analisar…'
+                : contradictions.length > 0
+                  ? `Contradições: ${contradictions.length}`
+                  : 'Detectar contradições'}
+            </button>
+          )}
         </div>
       </div>
 

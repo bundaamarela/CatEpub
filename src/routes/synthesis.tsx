@@ -109,7 +109,8 @@ const Synthesis = () => {
               <div className={cn(styles.tensions)}>
                 {result.tensions.map((t, i) => (
                   <p key={i} className={cn(styles.tensionItem)}>
-                    {t}
+                    <span className={cn(styles.tensionIcon)} aria-hidden>⚡</span>
+                    <span>{t}</span>
                   </p>
                 ))}
               </div>
