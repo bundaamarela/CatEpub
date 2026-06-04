@@ -199,6 +199,16 @@ export const PauseIcon: FC<IconProps> = ({ size, ...rest }) => (
   </svg>
 );
 
+export const GraphIcon: FC<IconProps> = ({ size, ...rest }) => (
+  <svg {...baseProps(size, rest)}>
+    <circle cx="6" cy="6" r="2.5" />
+    <circle cx="18" cy="6" r="2.5" />
+    <circle cx="12" cy="18" r="2.5" />
+    <path d="M8 7.5 11 16M16 7.5 13 16" />
+    <path d="M8.5 6h7" />
+  </svg>
+);
+
 export const SparklesIcon: FC<IconProps> = ({ size, ...rest }) => (
   <svg {...baseProps(size, rest)}>
     <path d="M12 4v3M12 17v3M4 12h3M17 12h3" />

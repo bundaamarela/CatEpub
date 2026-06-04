@@ -1,0 +1,198 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px clamp(16px, 4vw, 32px) 12px;
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: var(--text);
+  margin: 0;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  min-width: 120px;
+}
+
+.slider {
+  width: 100px;
+  accent-color: var(--text);
+}
+
+.sliderLabel {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.canvasWrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.canvas :global(circle) {
+  cursor: pointer;
+}
+
+.canvas :global(line) {
+  stroke: var(--border-strong);
+  stroke-opacity: 0.5;
+}
+
+.canvas :global(text) {
+  fill: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 280px;
+  max-width: 90%;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  z-index: 5;
+}
+
+.sidebarTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.sidebarBook {
+  font-size: 12px;
+  color: var(--text-3);
+  margin: 0 0 8px;
+}
+
+.sidebarText {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.sidebarClose {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 14px;
+  padding: 40px;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.progressBar {
+  width: 200px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--text);
+  border-radius: 2px;
+  transition: width 0.2s;
+}
+
+.computeBtn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.computeBtn:hover {
+  opacity: 0.85;
+}
+
+.legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 0 clamp(16px, 4vw, 32px) 8px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
