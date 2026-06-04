@@ -45,4 +45,5 @@ export interface Preferences {
   aiProvider: AiProvider;
   aiApiKey?: string;
   libraryFolder?: string;
+  showQuote: boolean;
 }

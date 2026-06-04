@@ -149,6 +149,8 @@ const Settings: FC = () => {
       ttsVoice: s.ttsVoice,
       aiProvider: s.aiProvider,
       aiApiKey: s.aiApiKey,
+      showQuote: s.showQuote,
+      setShowQuote: s.setShowQuote,
       setTtsProvider: s.setTtsProvider,
       setTtsRate: s.setTtsRate,
       setTtsVoice: s.setTtsVoice,
@@ -276,6 +278,15 @@ const Settings: FC = () => {
           step={10}
           display={`${p.pageWidth}px`}
           onChange={p.setPageWidth}
+        />
+      </div>
+
+      <div className={cn(styles.card)}>
+        <h2 className={cn(styles.cardTitle)}>Início</h2>
+        <ToggleRow
+          label="Mostrar frase diária"
+          checked={p.showQuote}
+          onChange={p.setShowQuote}
         />
       </div>
 

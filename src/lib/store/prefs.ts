@@ -34,6 +34,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   ttsRate: 1,
   syncEnabled: false,
   aiProvider: 'none',
+  showQuote: true,
 };
 
 interface PrefsState extends Preferences {
@@ -60,6 +61,7 @@ interface PrefsState extends Preferences {
   setAiProvider: (p: AiProvider) => void;
   setAiApiKey: (key: string | undefined) => void;
   setLibraryFolder: (path: string | undefined) => void;
+  setShowQuote: (v: boolean) => void;
   reset: () => void;
 }
 
@@ -148,6 +150,7 @@ export const usePrefs = create<PrefsState>()(
           set({ libraryFolder });
         }
       },
+      setShowQuote: (showQuote) => set({ showQuote }),
       reset: () => {
         applyCurrentTheme(DEFAULT_PREFERENCES.theme);
         set(DEFAULT_PREFERENCES);
