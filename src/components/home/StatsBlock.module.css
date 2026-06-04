@@ -1,0 +1,84 @@
+.root {
+  margin-bottom: 3rem;
+}
+
+.sessionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.sessionStat {
+  flex: 1 1 120px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sessionStatWide {
+  flex: 2 1 200px;
+}
+
+.sessionLabel {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sessionValue {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--text);
+  font-weight: 400;
+}
+
+.sessionBook {
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chartWrap {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.chartTitle {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.75rem;
+}
+
+.chart {
+  display: block;
+  overflow: visible;
+}
+
+.bar {
+  fill: var(--text);
+  opacity: 0.75;
+}
+
+.barLabel {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  fill: var(--text-3);
+}

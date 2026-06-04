@@ -1,0 +1,61 @@
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.item {
+  position: relative;
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+  border-left: 3px solid transparent;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.item:hover {
+  background: var(--surface);
+}
+
+/**
+ * Capítulo actualmente em leitura — barra vertical colorida à esquerda
+ * (não apenas bold, conforme requisito).
+ */
+.itemActive {
+  border-left-color: var(--accent);
+  background: var(--surface);
+}
+
+.link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.5rem 0.5rem 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--text-2);
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.itemActive .link {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 2px;
+}
+
+.empty {
+  padding: 1.25rem 1rem;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text-3);
+  text-align: center;
+}

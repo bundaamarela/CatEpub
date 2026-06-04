@@ -1,0 +1,133 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1rem 0.5rem;
+  flex-shrink: 0;
+  height: 100%;
+  transition: width 0.18s ease;
+}
+
+.collapsed {
+  width: var(--sidebar-w-collapsed);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem 1.25rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.brandText {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.collapsed .brandText {
+  display: none;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1 1 auto;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.item:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.itemActive {
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.itemIcon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.itemLabel {
+  flex: 1 1 auto;
+}
+
+.collapsed .itemLabel {
+  display: none;
+}
+
+.collapsed .item {
+  justify-content: center;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.collapseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.collapseButton:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}

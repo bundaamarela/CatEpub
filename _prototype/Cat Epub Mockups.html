@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cat Epub — Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { width: 100%; height: 100%; }
+body { font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef } = React;
+
+/* ─── TOKENS ─────────────────────────────────────────────────────── */
+const T = {
+  paper:  { bg: '#FAF8F3', surface: '#F2EFE8', border: '#E0DDD5', text: '#1A1A1A', text2: '#5A5550', text3: '#9A9590' },
+  sepia:  { bg: '#F4ECD8', surface: '#EDE3CB', border: '#D8CEBC', text: '#3E2723', text2: '#7A6355', text3: '#AE9E8E' },
+  night:  { bg: '#1C1C1E', surface: '#2C2C2E', border: '#3A3A3C', text: '#E8DDC8', text2: '#9A9590', text3: '#58585A' },
+  oled:   { bg: '#000000', surface: '#111111', border: '#222222', text: '#E5C07B', text2: '#888866', text3: '#444433' },
+};
+
+/* ─── SHARED ATOMS ───────────────────────────────────────────────── */
+const CatLogo = ({ size = 24, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" fill={color}>
+    <ellipse cx="20" cy="26" rx="13" ry="11"/>
+    <ellipse cx="20" cy="14" rx="11" ry="10"/>
+    <polygon points="10,7 6,1 14,6"/>
+    <polygon points="30,7 34,1 26,6"/>
+    <circle cx="15" cy="12" r="2.5" fill="white" opacity="0.9"/>
+    <circle cx="25" cy="12" r="2.5" fill="white" opacity="0.9"/>
+    <circle cx="15.8" cy="12.8" r="1.2" fill={color}/>
+    <circle cx="25.8" cy="12.8" r="1.2" fill={color}/>
+    <path d="M17 17 Q20 19.5 23 17" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+  </svg>
+);
+
+const Icon = ({ children, size = 16, color = 'currentColor', sw = 1.5 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+    {children}
+  </svg>
+);
+
+const IcoHome = ({s=16,c='currentColor'}) => <Icon size={s} color={c}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>;
+const IcoBook = ({s=16,c='currentColor'}) => <Icon size={s} color={c}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></Icon>;
+const IcoSearch = ({s=16,c='currentColor'}) => <Icon size={s} color={c}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></Icon>;
+const IcoSettings = ({s=16,c='currentColor'}) => <Icon size={s} color={c}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></Icon>;
+const IcoBookmark = ({s=16,c='currentColor',filled=false}) => <Icon size={s} color={c} sw={1.5}><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" fill={filled?c:'none'}/></Icon>;
+const IcoEdit = ({s=16,c='currentColor'}) => <Icon size={s} color={c}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></Icon>;
+const IcoList = ({s=16,c='currentColor'}) => <Icon size={s} color={c}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></Icon>;
+const IcoChevL = ({s=16,c='currentColor'}) => <Icon size={s} color={c}><path d="m15 18-6-6 6-6"/></Icon>;
+const IcoStar = ({s=16,c='currentColor'}) => <Icon size={s} color={c}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></Icon>;
+const IcoAI = ({s=16,c='currentColor'}) => <Icon size={s} color={c}><path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2z"/><path d="M8 12h8"/><path d="M12 8v8"/></Icon>;
+const IcoBrain = ({s=16,c='currentColor'}) => <Icon size={s} color={c}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-1.99-3 2.5 2.5 0 0 1-1.1-4.96A2.5 2.5 0 0 1 6 8.5a2.5 2.5 0 0 1 3.5-6z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 1.99-3 2.5 2.5 0 0 0 1.1-4.96A2.5 2.5 0 0 0 18 8.5a2.5 2.5 0 0 0-3.5-6z"/></Icon>;
+const IcoFlash = ({s=16,c='currentColor'}) => <Icon size={s} color={c} sw={1.5}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></Icon>;
+
+const Bar = ({ value, h = 2, bg = 'rgba(0,0,0,0.1)', fill = 'currentColor' }) => (
+  <div style={{ width: '100%', height: h, background: bg, borderRadius: 99, overflow: 'hidden' }}>
+    <div style={{ width: `${value}%`, height: '100%', background: fill, borderRadius: 99 }}/>
+  </div>
+);
+
+const Cover = ({ hue, title, author, w: wProp = 56, h = 78, t }) => {
+  const w = typeof wProp === 'number' ? wProp : 100;
+  const isDark = t.bg === '#1C1C1E' || t.bg === '#000000';
+  return (
+    <div style={{
+      width: wProp, height: h, borderRadius: 4, flexShrink: 0, overflow: 'hidden', position: 'relative',
+      background: `hsl(${hue},15%,${isDark ? 25 : 82}%)`,
+      boxShadow: '2px 3px 8px rgba(0,0,0,0.15)',
+    }}>
+      <div style={{ position:'absolute', inset:0, background:`linear-gradient(135deg,hsl(${hue},8%,${isDark?30:92}%) 0%,hsl(${hue},15%,${isDark?18:74}%) 100%)` }}/>
+      <div style={{ position:'absolute', inset:0, padding:'6px 5px', display:'flex', flexDirection:'column', gap:3 }}>
+        <div style={{ fontSize: Math.max(6, w*0.09), fontWeight:700, color:`hsl(${hue},20%,${isDark?80:22}%)`, lineHeight:1.2 }}>{title}</div>
+        <div style={{ fontSize: Math.max(5, w*0.07), color:`hsl(${hue},12%,${isDark?60:42}%)`, lineHeight:1.2 }}>{author}</div>
+        <div style={{ flex:1, display:'flex', alignItems:'flex-end', justifyContent:'center', opacity:0.2 }}>
+          <CatLogo size={Math.max(14, w*0.28)} color={`hsl(${hue},20%,${isDark?80:22}%)`}/>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── SIDEBAR (desktop) ──────────────────────────────────────────── */
+const Sidebar = ({ t, active = 'home' }) => {
+  const items = [
+    { id:'home', label:'Início', Ico: IcoHome },
+    { id:'library', label:'Biblioteca', Ico: IcoBook },
+    { id:'search', label:'Buscar', Ico: IcoSearch },
+    { id:'flashcards', label:'Flashcards', Ico: IcoFlash },
+    { id:'settings', label:'Config.', Ico: IcoSettings },
+  ];
+  return (
+    <div style={{ width:220, height:'100%', background:t.surface, borderRight:`1px solid ${t.border}`, display:'flex', flexDirection:'column', flexShrink:0 }}>
+      <div style={{ height:56, display:'flex', alignItems:'center', gap:10, padding:'0 18px', borderBottom:`1px solid ${t.border}` }}>
+        <CatLogo size={24} color={t.text}/>
+        <span style={{ fontSize:16, fontWeight:700, color:t.text, letterSpacing:'-0.3px' }}>Cat Epub</span>
+      </div>
+      <nav style={{ flex:1, padding:'10px 8px', display:'flex', flexDirection:'column', gap:2 }}>
+        {items.map(({ id, label, Ico }) => (
+          <div key={id} style={{
+            display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:8,
+            background: active===id ? t.border : 'transparent',
+            color: active===id ? t.text : t.text2,
+            fontWeight: active===id ? 600 : 400, fontSize:13, cursor:'default',
+          }}>
+            <Ico s={15} c={active===id ? t.text : t.text2}/>
+            {label}
+          </div>
+        ))}
+      </nav>
+      <div style={{ padding:'12px 18px', borderTop:`1px solid ${t.border}`, fontSize:11, color:t.text3 }}>
+        Cat Epub v1.0 · offline
+      </div>
+    </div>
+  );
+};
+
+/* ─── MOCKUP 1: HOME — PAPER ─────────────────────────────────────── */
+const M1_Home = () => {
+  const t = T.paper;
+  const books = [
+    { hue:220, title:'1984', author:'G. Orwell', progress:88 },
+    { hue:145, title:'Cem Anos de Solidão', author:'García Márquez', progress:34 },
+    { hue:45, title:'O Pequeno Príncipe', author:'Saint-Exupéry', progress:72 },
+  ];
+  const recent = [
+    { hue:280, title:'Sapiens', author:'Harari' },
+    { hue:30, title:'Dom Casmurro', author:'Machado' },
+    { hue:0, title:'O Alquimista', author:'Coelho' },
+    { hue:180, title:'Dune', author:'Herbert' },
+  ];
+
+  return (
+    <div style={{ display:'flex', height:'100%', background:t.bg, fontSize:13, color:t.text, fontFamily:"-apple-system,'SF Pro Text','Helvetica Neue',sans-serif" }}>
+      <Sidebar t={t} active="home"/>
+      <div style={{ flex:1, overflowY:'auto', padding:'36px 40px' }}>
+        {/* Greeting */}
+        <div style={{ marginBottom:36 }}>
+          <div style={{ fontSize:26, fontWeight:700, color:t.text, letterSpacing:'-0.5px', marginBottom:4 }}>Bom dia</div>
+          <div style={{ color:t.text2, fontSize:14 }}>Segunda-feira, 4 de Maio · 48h lidas este mês</div>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:40 }}>
+          {[
+            { label:'Páginas lidas', val:'4.820', ico: IcoBook },
+            { label:'Concluídos', val:'12', ico: IcoStar },
+            { label:'Flashcards hoje', val:'24', ico: IcoFlash },
+          ].map(({ label, val, ico: Ico }) => (
+            <div key={label} style={{ background:t.surface, borderRadius:12, padding:'18px 18px', border:`1px solid ${t.border}` }}>
+              <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:12, color:t.text2 }}>
+                <Ico s={13} c={t.text2}/>
+                <span style={{ fontSize:11, fontWeight:500 }}>{label}</span>
+              </div>
+              <div style={{ fontSize:26, fontWeight:700, color:t.text, fontVariantNumeric:'tabular-nums' }}>{val}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Continue reading */}
+        <div style={{ fontSize:11, fontWeight:700, color:t.text2, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>Continuar a ler</div>
+        <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:40 }}>
+          {books.map((b, i) => (
+            <div key={i} style={{ display:'flex', gap:14, alignItems:'center', padding:'14px 16px', background:t.surface, border:`1px solid ${t.border}`, borderRadius:12, cursor:'default' }}>
+              <Cover {...b} t={t} w={52} h={72}/>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontWeight:600, fontSize:14, color:t.text, marginBottom:2 }}>{b.title}</div>
+                <div style={{ fontSize:12, color:t.text2, marginBottom:10 }}>{b.author}</div>
+                <Bar value={b.progress} h={3} bg={t.border} fill={t.text}/>
+                <div style={{ display:'flex', justifyContent:'space-between', marginTop:5, fontSize:11, color:t.text3 }}>
+                  <span>Capítulo {Math.ceil(b.progress/20)} de 20</span>
+                  <span>{b.progress}%</span>
+                </div>
+              </div>
+              <div style={{ padding:'6px 14px', background:t.text, color:t.bg, borderRadius:7, fontSize:12, fontWeight:600, cursor:'default' }}>Ler</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Recent */}
+        <div style={{ fontSize:11, fontWeight:700, color:t.text2, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>Recentes</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:20 }}>
+          {recent.map((b,i) => (
+            <div key={i} style={{ cursor:'default' }}>
+              <Cover {...b} t={t} w={110} h={120}/>
+              <div style={{ marginTop:8, fontSize:12, fontWeight:600, color:t.text }}>{b.title}</div>
+              <div style={{ fontSize:11, color:t.text3, marginTop:2 }}>{b.author}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── MOCKUP 2: READER — ESTADO IMERSÃO (PAPER) ──────────────────── */
+const M2_ReaderImmersion = () => {
+  const t = T.paper;
+  const text = `No dia em que o coronel Aureliano Buendía havia de lembrar-se daquela tarde remota em que seu pai o levou para conhecer o gelo, Macondo era uma aldeia de vinte casas de barro e cana brava construída à beira de um rio de águas diáfanas que se precipitavam por um leito de pedras polidas, brancas e enormes como ovos pré-históricos.
+
+O mundo era tão recente que muitas coisas careciam de nome e para mencioná-las se precisava apontar com o dedo. Todos os anos, lá pelo mês de março, uma família de ciganos maltrapilhos armava sua tenda perto da aldeia e, com grande alvoroço de apitos e timbales, exibia as novas invenções.
+
+Primeiro trouxeram o ímã. Um cigano corpulento, de barba inculta e mãos de pardal, que se apresentou com o nome de Melquíades, fez uma truculenta demonstração pública do que ele mesmo chamava de a oitava maravilha dos sábios alquimistas da Macedônia. Foi de casa em casa arrastando dois lingotes metálicos e todo mundo ficou apavorado ao ver que panelas, tachos e fogareiros tombavam de seu lugar.`;
+
+  return (
+    <div style={{ width:'100%', height:'100%', background:t.bg, position:'relative', display:'flex', flexDirection:'column' }}>
+      {/* Minimal position indicator — 20% opacity, top right */}
+      <div style={{ position:'absolute', top:20, right:28, fontSize:11, color:t.text, opacity:0.2, fontVariantNumeric:'tabular-nums' }}>
+        Cap. 3 · 147/432
+      </div>
+
+      {/* Pure text, zero chrome */}
+      <div style={{ flex:1, overflowY:'auto', display:'flex', justifyContent:'center', alignItems:'flex-start' }}>
+        <div style={{ maxWidth:640, width:'100%', padding:'80px 40px 80px', fontFamily:"'Lora', Georgia, serif", fontSize:19, lineHeight:1.65, color:t.text }}>
+          {text.split('\n\n').map((para, i) => (
+            <p key={i} style={{ marginBottom:'1.5em', textIndent:'2em', textWrap:'pretty' }}>{para}</p>
+          ))}
+          {/* Highlight example */}
+          <p style={{ marginBottom:'1.5em', textIndent:'2em', textWrap:'pretty' }}>
+            As coisas têm vida própria — apregoava o cigano com áspero sotaque —, tudo é questão de despertar-lhes a alma. José Arcádio Buendía, cuja desmedida imaginação ia sempre além do engenho da natureza e até além do{' '}
+            <mark style={{ background:'rgba(180,140,80,0.25)', borderRadius:2, padding:'1px 0' }}>milagre e da magia, pensou que era possível servir-se daquela invenção inútil para desentranhar o ouro da terra.</mark>
+            {' '}Melquíades, que era um homem honrado, advertiu-o.
+          </p>
+        </div>
+      </div>
+
+      {/* Subtle progress — bottom, paper colour */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, background:t.border }}>
+        <div style={{ width:'34%', height:'100%', background:t.text, opacity:0.3 }}/>
+      </div>
+    </div>
+  );
+};
+
+/* ─── MOCKUP 3: READER — OVERLAY CONTROLS (NIGHT) ───────────────── */
+const M3_ReaderOverlay = () => {
+  const t = T.night;
+  const text = `No dia em que o coronel Aureliano Buendía havia de lembrar-se daquela tarde remota em que seu pai o levou para conhecer o gelo, Macondo era uma aldeia de vinte casas de barro e cana brava construída à beira de um rio de águas diáfanas que se precipitavam por um leito de pedras polidas, brancas e enormes como ovos pré-históricos.
+
+O mundo era tão recente que muitas coisas careciam de nome e para mencioná-las se precisava apontar com o dedo. Todos os anos, lá pelo mês de março, uma família de ciganos maltrapilhos armava sua tenda perto da aldeia e, com grande alvoroço de apitos e timbales, exibia as novas invenções.`;
+
+  return (
+    <div style={{ width:'100%', height:'100%', background:t.bg, position:'relative', display:'flex', flexDirection:'column' }}>
+      {/* Top overlay — ephemeral, 70% opacity bg */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, background:`${t.bg}ee`, borderBottom:`1px solid ${t.border}`, padding:'12px 20px', display:'flex', alignItems:'center', gap:12 }}>
+        <button style={{ background:'none', border:'none', color:t.text2, display:'flex', padding:4, cursor:'default' }}>
+          <IcoChevL s={18} c={t.text2}/>
+        </button>
+        <div style={{ flex:1, textAlign:'center' }}>
+          <div style={{ fontSize:13, fontWeight:700, color:t.text }}>Cem Anos de Solidão</div>
+          <div style={{ fontSize:11, color:t.text3, marginTop:1 }}>Capítulo 3 · Gabriel García Márquez</div>
+        </div>
+        <div style={{ display:'flex', gap:4 }}>
+          {[IcoList, IcoBookmark, IcoEdit].map((Ico, i) => (
+            <div key={i} style={{ padding:6, borderRadius:6, display:'flex', cursor:'default', color:t.text2 }}>
+              <Ico s={16} c={t.text2}/>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Text */}
+      <div style={{ flex:1, overflowY:'auto', paddingTop:60, paddingBottom:80 }}>
+        <div style={{ maxWidth:640, margin:'0 auto', padding:'32px 40px', fontFamily:"'Lora', Georgia, serif", fontSize:19, lineHeight:1.65, color:t.text }}>
+          {text.split('\n\n').map((para, i) => (
+            <p key={i} style={{ marginBottom:'1.5em', textIndent:'2em', textWrap:'pretty' }}>{para}</p>
+          ))}
+          {/* Highlight with note bubble */}
+          <p style={{ marginBottom:'1.5em', textIndent:'2em', position:'relative', textWrap:'pretty' }}>
+            Primeiro trouxeram o ímã. Um cigano corpulento, de barba inculta e mãos de pardal, que se apresentou com o nome de Melquíades, fez uma truculenta demonstração pública do que ele mesmo chamava de{' '}
+            <mark style={{ background:'rgba(229,192,123,0.22)', borderRadius:2, padding:'1px 0', borderBottom:'1px solid rgba(229,192,123,0.5)' }}>a oitava maravilha dos sábios alquimistas da Macedônia.</mark>
+          </p>
+          {/* Note bubble */}
+          <div style={{ marginLeft:'2em', marginTop:-8, marginBottom:16, padding:'10px 14px', background:t.surface, borderRadius:8, border:`1px solid ${t.border}`, fontSize:12, color:t.text2, lineHeight:1.5 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
+              <IcoEdit s={11} c={t.text3}/>
+              <span style={{ fontSize:10, color:t.text3, fontWeight:600 }}>ANOTAÇÃO · pág. 147</span>
+            </div>
+            Melquíades representa o arquétipo do sábio viajante — mesclando ciência e magia na visão de Macondo.
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom overlay */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, background:`${t.bg}ee`, borderTop:`1px solid ${t.border}`, padding:'10px 24px 20px' }}>
+        <Bar value={34} h={2} bg={t.border} fill={t.text2}/>
+        <div style={{ display:'flex', justifyContent:'space-between', marginTop:6, fontSize:11, color:t.text3 }}>
+          <span>Pág. 147 de 432</span>
+          <span>34% · ~5h restantes</span>
+        </div>
+        <div style={{ display:'flex', justifyContent:'center', gap:32, marginTop:12 }}>
+          <button style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 20px', border:`1px solid ${t.border}`, borderRadius:8, background:'none', color:t.text2, fontSize:12, cursor:'default' }}>
+            <IcoChevL s={13} c={t.text2}/> Anterior
+          </button>
+          <button style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 20px', background:t.text2, border:'none', borderRadius:8, color:t.bg, fontSize:12, fontWeight:600, cursor:'default' }}>
+            Próxima <IcoChevL s={13} c={t.bg}/>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── MOCKUP 4: ESTADO CONHECIMENTO — HIGHLIGHTS & NOTES ─────────── */
+const M4_Knowledge = () => {
+  const t = T.sepia;
+  const highlights = [
+    { color:'#B8860B', label:'Conceito-chave', text:'As coisas têm vida própria — tudo é questão de despertar-lhes a alma.', page:147, note:'Melquíades = arquétipo do sábio viajante.' },
+    { color:'#8B0000', label:'Contestável', text:'A realidade pode ser mais extraordinária que qualquer ficção.', page:203 },
+    { color:'#1B5E20', label:'Factual', text:'Macondo foi fundada com vinte famílias originárias da região costeira.', page:12, note:null },
+    { color:'#1A237E', label:'Pergunta', text:'Porque é que o coronel sobreviveu a trinta e dois levantamentos armados?', page:289 },
+    { color:'#4A148C', label:'Citável', text:'A memória tem raízes que não se arrancam sem sangrar.', page:312 },
+  ];
+
+  return (
+    <div style={{ display:'flex', height:'100%', background:t.bg, fontSize:13, color:t.text, fontFamily:"-apple-system,'SF Pro Text','Helvetica Neue',sans-serif" }}>
+      <Sidebar t={t} active="library"/>
+
+      <div style={{ flex:1, display:'flex', overflow:'hidden' }}>
+        {/* Book detail panel */}
+        <div style={{ width:260, borderRight:`1px solid ${t.border}`, background:t.surface, display:'flex', flexDirection:'column', flexShrink:0 }}>
+          <div style={{ padding:'24px 20px', borderBottom:`1px solid ${t.border}` }}>
+            <Cover hue={145} title="Cem Anos de Solidão" author="García Márquez" t={t} w={100} h={140}/>
+            <div style={{ marginTop:14 }}>
+              <div style={{ fontWeight:700, fontSize:15, color:t.text }}>Cem Anos de Solidão</div>
+              <div style={{ fontSize:12, color:t.text2, marginTop:2 }}>Gabriel García Márquez</div>
+              <div style={{ marginTop:12 }}>
+                <Bar value={34} h={3} bg={t.border} fill={t.text}/>
+                <div style={{ display:'flex', justifyContent:'space-between', marginTop:5, fontSize:11, color:t.text3 }}>
+                  <span>Pág. 147/432</span><span>34%</span>
+                </div>
+              </div>
+              <div style={{ marginTop:14, display:'flex', gap:8 }}>
+                <div style={{ flex:1, textAlign:'center', padding:'8px 0', background:t.border, borderRadius:7, fontSize:11, fontWeight:600, color:t.text }}>
+                  <div style={{ fontSize:16, fontWeight:700 }}>5</div>
+                  <div style={{ color:t.text2, marginTop:1 }}>highlights</div>
+                </div>
+                <div style={{ flex:1, textAlign:'center', padding:'8px 0', background:t.border, borderRadius:7, fontSize:11, fontWeight:600, color:t.text }}>
+                  <div style={{ fontSize:16, fontWeight:700 }}>3</div>
+                  <div style={{ color:t.text2, marginTop:1 }}>notas</div>
+                </div>
+                <div style={{ flex:1, textAlign:'center', padding:'8px 0', background:t.border, borderRadius:7, fontSize:11, fontWeight:600, color:t.text }}>
+                  <div style={{ fontSize:16, fontWeight:700 }}>2</div>
+                  <div style={{ color:t.text2, marginTop:1 }}>markers</div>
+                </div>
+              </div>
+              <button style={{ marginTop:12, width:'100%', padding:'9px', background:t.text, color:t.bg, border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'default' }}>
+                Continuar a ler
+              </button>
+              <button style={{ marginTop:6, width:'100%', padding:'8px', background:'none', color:t.text2, border:`1px solid ${t.border}`, borderRadius:8, fontSize:12, cursor:'default' }}>
+                Exportar para Obsidian
+              </button>
+            </div>
+          </div>
+          {/* TOC mini */}
+          <div style={{ flex:1, overflowY:'auto', padding:'12px 0' }}>
+            <div style={{ padding:'6px 20px 8px', fontSize:10, fontWeight:700, color:t.text3, textTransform:'uppercase', letterSpacing:0.8 }}>Índice</div>
+            {['O Início de Tudo','A Família Buendía','Os Ciganos','A Fundação','A Solidão','O Coronel'].map((ch, i) => (
+              <div key={i} style={{ padding:'9px 20px', display:'flex', justifyContent:'space-between', borderBottom:`1px solid ${t.border}`, cursor:'default', color: i===2 ? t.text : t.text2, fontWeight: i===2 ? 600 : 400 }}>
+                <span style={{ fontSize:13 }}>{ch}</span>
+                <span style={{ fontSize:11, color:t.text3 }}>{(i+1)*28}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Highlights list */}
+        <div style={{ flex:1, overflowY:'auto', padding:'28px 32px' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
+            <div style={{ fontSize:18, fontWeight:700, color:t.text }}>Highlights & Anotações</div>
+            <div style={{ display:'flex', gap:6 }}>
+              {['Todos','Conceito','Factual','Pergunta'].map((f,i) => (
+                <button key={f} style={{ padding:'5px 12px', borderRadius:99, border:`1px solid ${t.border}`, background: i===0 ? t.text : 'transparent', color: i===0 ? t.bg : t.text2, fontSize:12, cursor:'default' }}>{f}</button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {highlights.map((h, i) => (
+              <div key={i} style={{ background:t.surface, border:`1px solid ${t.border}`, borderRadius:12, overflow:'hidden' }}>
+                <div style={{ borderLeft:`3px solid ${h.color}`, padding:'14px 16px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                    <div style={{ width:8, height:8, borderRadius:'50%', background:h.color, flexShrink:0 }}/>
+                    <span style={{ fontSize:10, fontWeight:700, color:t.text3, textTransform:'uppercase', letterSpacing:0.7 }}>{h.label}</span>
+                    <span style={{ fontSize:10, color:t.text3, marginLeft:'auto' }}>pág. {h.page}</span>
+                  </div>
+                  <div style={{ fontFamily:"'Lora', Georgia, serif", fontSize:14, lineHeight:1.6, color:t.text, fontStyle:'italic' }}>
+                    "{h.text}"
+                  </div>
+                  {h.note && (
+                    <div style={{ marginTop:10, padding:'8px 12px', background:t.bg, borderRadius:6, fontSize:12, color:t.text2, lineHeight:1.5 }}>
+                      <span style={{ fontWeight:600, color:t.text3, fontSize:10 }}>NOTA  </span>{h.note}
+                    </div>
+                  )}
+                  <div style={{ display:'flex', gap:8, marginTop:10 }}>
+                    <button style={{ fontSize:11, color:t.text3, background:'none', border:'none', cursor:'default', display:'flex', alignItems:'center', gap:4 }}>
+                      <IcoEdit s={11} c={t.text3}/> Anotar
+                    </button>
+                    <button style={{ fontSize:11, color:t.text3, background:'none', border:'none', cursor:'default', display:'flex', alignItems:'center', gap:4 }}>
+                      <IcoFlash s={11} c={t.text3}/> → Flashcard
+                    </button>
+                    <button style={{ fontSize:11, color:t.text3, background:'none', border:'none', cursor:'default', display:'flex', alignItems:'center', gap:4, marginLeft:'auto' }}>
+                      <IcoBook s={11} c={t.text3}/> Ver no livro
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── MOCKUP 5: IA — CHAT WITH BOOK ─────────────────────────────── */
+const M5_AI = () => {
+  const t = T.night;
+  const messages = [
+    { role:'user', text:'Qual é o significado da chegada dos ciganos em Macondo?' },
+    { role:'ai', text:'Os ciganos representam a irrupção do conhecimento externo numa comunidade fechada. No capítulo 1, García Márquez apresenta-os como portadores de invenções que Macondo não tem nome para descrever — o que sublinha a ideia de que o mundo é "tão recente que muitas coisas careciam de nome."', cite:'pág. 12 · Cap. 1' },
+    { role:'user', text:'E Melquíades especificamente?' },
+    { role:'ai', text:'Melquíades é o sábio-mediador entre o real e o maravilhoso. Nos teus highlights, marcaste a frase "As coisas têm vida própria — tudo é questão de despertar-lhes a alma" como conceito-chave. Ele é simultaneamente charlatão e profeta — a sua morte e ressurreição antecipam o ciclo de solidão da família Buendía.', cite:'pág. 147 · Cap. 3' },
+  ];
+
+  return (
+    <div style={{ display:'flex', height:'100%', background:t.bg, fontSize:13, color:t.text, fontFamily:"-apple-system,'SF Pro Text','Helvetica Neue',sans-serif" }}>
+      <Sidebar t={t} active="library"/>
+
+      <div style={{ flex:1, display:'flex', overflow:'hidden' }}>
+        {/* Reading pane */}
+        <div style={{ flex:1, borderRight:`1px solid ${t.border}`, overflowY:'auto', padding:'40px', fontFamily:"'Lora', Georgia, serif", fontSize:18, lineHeight:1.65, color:t.text }}>
+          <div style={{ maxWidth:520, margin:'0 auto' }}>
+            <div style={{ fontSize:12, color:t.text3, marginBottom:24, fontFamily:"-apple-system,sans-serif" }}>Capítulo 3 · Pág. 147</div>
+            <p style={{ marginBottom:'1.4em', textIndent:'2em' }}>
+              As coisas têm vida própria — apregoava o cigano com áspero sotaque —,{' '}
+              <mark style={{ background:'rgba(229,192,123,0.2)', padding:'1px 0', borderRadius:2, borderBottom:'1px solid rgba(229,192,123,0.4)' }}>
+                tudo é questão de despertar-lhes a alma.
+              </mark>
+              {' '}José Arcádio Buendía, cuja desmedida imaginação ia sempre além do engenho da natureza e até além do milagre e da magia, pensou que era possível servir-se daquela invenção inútil para desentranhar o ouro da terra.
+            </p>
+            <p style={{ marginBottom:'1.4em', textIndent:'2em' }}>
+              Melquíades, que era um homem honrado, advertiu-o: Para isso não serve. Mas José Arcádio Buendía não acreditava naquele tempo na honradez dos ciganos, e trocou seu mulo e um rebanho de cabras pelos dois lingotes imantados.
+            </p>
+            <p style={{ textIndent:'2em', opacity:0.45 }}>
+              Ursula Iguarán, sua mulher, que contava com aqueles animais para engrandecer o exíguo patrimônio doméstico, não conseguiu dissuadi-lo. Onde vai estar o nosso dinheiro para pagar os impostos?
+            </p>
+          </div>
+        </div>
+
+        {/* AI Chat panel */}
+        <div style={{ width:340, display:'flex', flexDirection:'column', background:t.surface }}>
+          <div style={{ padding:'16px 20px', borderBottom:`1px solid ${t.border}`, display:'flex', alignItems:'center', gap:10 }}>
+            <IcoBrain s={16} c={t.text2}/>
+            <span style={{ fontWeight:700, fontSize:14, color:t.text }}>Perguntar ao livro</span>
+            <div style={{ marginLeft:'auto', fontSize:10, padding:'3px 8px', background:t.border, borderRadius:99, color:t.text3 }}>IA local</div>
+          </div>
+
+          {/* Related highlights */}
+          <div style={{ padding:'12px 16px', borderBottom:`1px solid ${t.border}`, fontSize:11, color:t.text3 }}>
+            <div style={{ marginBottom:8, fontWeight:600, display:'flex', alignItems:'center', gap:6 }}>
+              <IcoBookmark s={11} c={t.text3} filled/> Highlights relacionados
+            </div>
+            <div style={{ background:t.bg, borderRadius:8, padding:'8px 10px', fontSize:12, color:t.text2, fontFamily:"'Lora',serif", fontStyle:'italic', borderLeft:`2px solid #B8860B` }}>
+              "As coisas têm vida própria..."
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div style={{ flex:1, overflowY:'auto', padding:'16px' }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              {messages.map((m, i) => (
+                <div key={i} style={{ display:'flex', flexDirection:'column', gap:4, alignItems: m.role==='user' ? 'flex-end' : 'flex-start' }}>
+                  <div style={{
+                    maxWidth:'85%', padding:'10px 13px', borderRadius:10, fontSize:13, lineHeight:1.5,
+                    background: m.role==='user' ? t.text2 : t.bg,
+                    color: m.role==='user' ? t.bg : t.text,
+                    border: m.role==='ai' ? `1px solid ${t.border}` : 'none',
+                  }}>
+                    {m.text}
+                  </div>
+                  {m.cite && (
+                    <div style={{ fontSize:10, color:t.text3, padding:'3px 8px', background:t.border, borderRadius:6, display:'flex', alignItems:'center', gap:4, cursor:'default' }}>
+                      <IcoBook s={10} c={t.text3}/> {m.cite} — ver no livro
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Input */}
+          <div style={{ padding:'12px 16px', borderTop:`1px solid ${t.border}` }}>
+            <div style={{ display:'flex', gap:8, alignItems:'center', padding:'8px 12px', background:t.bg, border:`1px solid ${t.border}`, borderRadius:10 }}>
+              <span style={{ flex:1, fontSize:13, color:t.text3 }}>Pergunta sobre este livro...</span>
+              <div style={{ padding:'5px 12px', background:t.text, borderRadius:7, fontSize:12, fontWeight:600, color:t.bg, cursor:'default', flexShrink:0 }}>Enviar</div>
+            </div>
+            <div style={{ fontSize:10, color:t.text3, textAlign:'center', marginTop:8 }}>Respostas baseadas no texto + teus highlights</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── MOCKUP 6: FLASHCARDS (SPACED REPETITION) ───────────────────── */
+const M6_Flashcards = () => {
+  const t = T.paper;
+  const card = {
+    front: 'O que representa a chegada dos ciganos a Macondo?',
+    back: 'A irrupção do conhecimento externo — eles trazem invenções que Macondo não tem palavras para descrever. Representam a fronteira entre o real e o maravilhoso.',
+    book: 'Cem Anos de Solidão',
+    page: 12,
+    due: 3,
+    interval: '3 dias',
+  };
+
+  return (
+    <div style={{ display:'flex', height:'100%', background:t.bg, fontSize:13, color:t.text, fontFamily:"-apple-system,'SF Pro Text','Helvetica Neue',sans-serif" }}>
+      <Sidebar t={t} active="flashcards"/>
+
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflowY:'auto', padding:'40px', alignItems:'center' }}>
+        {/* Header */}
+        <div style={{ width:'100%', maxWidth:600, marginBottom:36 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
+            <div style={{ fontSize:22, fontWeight:700, color:t.text }}>Revisão de hoje</div>
+            <div style={{ fontSize:13, color:t.text2 }}>3 de 24 · FSRS</div>
+          </div>
+          <Bar value={(3/24)*100} h={4} bg={t.border} fill={t.text}/>
+          <div style={{ display:'flex', gap:20, marginTop:14 }}>
+            {[{l:'Fácil',c:'#2E7D32',n:12},{l:'Bom',c:'#1565C0',n:8},{l:'Difícil',c:'#F57F17',n:3},{l:'Falhou',c:'#B71C1C',n:1}].map(s => (
+              <div key={s.l} style={{ display:'flex', alignItems:'center', gap:6 }}>
+                <div style={{ width:8, height:8, borderRadius:'50%', background:s.c }}/>
+                <span style={{ fontSize:12, color:t.text2 }}>{s.l}</span>
+                <span style={{ fontSize:12, fontWeight:700, color:t.text }}>{s.n}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Card */}
+        <div style={{ width:'100%', maxWidth:600 }}>
+          {/* Source */}
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, color:t.text3, fontSize:12 }}>
+            <IcoBook s={12} c={t.text3}/>
+            <span>{card.book} · pág. {card.page}</span>
+            <span style={{ marginLeft:'auto', fontSize:11, padding:'2px 8px', background:t.surface, border:`1px solid ${t.border}`, borderRadius:6 }}>Intervalo: {card.interval}</span>
+          </div>
+
+          {/* Front */}
+          <div style={{ background:t.surface, border:`1px solid ${t.border}`, borderRadius:16, padding:'32px', marginBottom:16, textAlign:'center' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:t.text3, textTransform:'uppercase', letterSpacing:1, marginBottom:20 }}>Pergunta</div>
+            <div style={{ fontSize:20, fontWeight:600, color:t.text, lineHeight:1.4, fontFamily:"'Lora', Georgia, serif" }}>
+              {card.front}
+            </div>
+          </div>
+
+          {/* Back */}
+          <div style={{ background:t.bg, border:`2px solid ${t.border}`, borderRadius:16, padding:'28px', marginBottom:24, position:'relative' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:t.text3, textTransform:'uppercase', letterSpacing:1, marginBottom:16 }}>Resposta</div>
+            <div style={{ fontSize:15, color:t.text, lineHeight:1.6, fontFamily:"'Lora', Georgia, serif" }}>
+              {card.back}
+            </div>
+            <button style={{ marginTop:16, display:'flex', alignItems:'center', gap:6, fontSize:12, color:t.text2, background:'none', border:`1px solid ${t.border}`, borderRadius:7, padding:'6px 12px', cursor:'default' }}>
+              <IcoBook s={12} c={t.text2}/> Ver passagem original
+            </button>
+          </div>
+
+          {/* Rating */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+            {[
+              { label:'Falhou', sub:'<1d', bg:'#FFF5F5', border:'#FFCDD2', text:'#C62828' },
+              { label:'Difícil', sub:'3d', bg:'#FFF8E1', border:'#FFE082', text:'#E65100' },
+              { label:'Bom', sub:'8d', bg:'#F3F8FF', border:'#BBDEFB', text:'#1565C0' },
+              { label:'Fácil', sub:'21d', bg:'#F1F8E9', border:'#C5E1A5', text:'#2E7D32' },
+            ].map(r => (
+              <button key={r.label} style={{ padding:'12px 8px', borderRadius:10, border:`1px solid ${r.border}`, background:r.bg, cursor:'default', textAlign:'center' }}>
+                <div style={{ fontSize:14, fontWeight:700, color:r.text }}>{r.label}</div>
+                <div style={{ fontSize:11, color:t.text3, marginTop:3 }}>{r.sub}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── MOCKUP 7: MOBILE — READER IMMERSION (SEPIA) ───────────────── */
+const M7_Mobile = () => {
+  const t = T.sepia;
+  const text = `No dia em que o coronel Aureliano Buendía havia de lembrar-se daquela tarde remota em que seu pai o levou para conhecer o gelo, Macondo era uma aldeia de vinte casas de barro e cana brava construída à beira de um rio de águas diáfanas.
+
+O mundo era tão recente que muitas coisas careciam de nome e para mencioná-las se precisava apontar com o dedo. Todos os anos, lá pelo mês de março, uma família de ciganos maltrapilhos armava sua tenda perto da aldeia.
+
+Primeiro trouxeram o ímã. Um cigano corpulento, de barba inculta e mãos de pardal, que se apresentou com o nome de Melquíades, fez uma truculenta demonstração pública do que chamava de a oitava maravilha dos sábios alquimistas da Macedônia.`;
+
+  return (
+    <div style={{ width:'100%', height:'100%', background:t.bg, display:'flex', flexDirection:'column', fontFamily:"-apple-system,'SF Pro Text',sans-serif" }}>
+      {/* Status bar sim */}
+      <div style={{ height:44, background:t.bg, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px', flexShrink:0 }}>
+        <span style={{ fontSize:12, fontWeight:600, color:t.text }}>9:41</span>
+        <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill={t.text}><rect x="0" y="4" width="3" height="8" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0" width="3" height="12" rx="1"/><rect x="13.5" y="1" width="2" height="11" rx="1" opacity="0.3"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke={t.text} strokeWidth="1.5"><rect x="1" y="3" width="12" height="7" rx="1.5"/><path d="M14 5.5v3a1.5 1.5 0 0 0 0-3z" fill={t.text} stroke="none"/><rect x="2" y="4" width="8" height="5" rx=".5" fill={t.text}/></svg>
+        </div>
+      </div>
+
+      {/* Minimal position indicator */}
+      <div style={{ position:'absolute', top:54, right:16, fontSize:10, color:t.text, opacity:0.2, fontVariantNumeric:'tabular-nums' }}>
+        147 / 432
+      </div>
+
+      {/* Text */}
+      <div style={{ flex:1, overflowY:'auto', padding:'16px 22px 40px' }}>
+        <div style={{ fontFamily:"'Lora', Georgia, serif", fontSize:18, lineHeight:1.7, color:t.text }}>
+          {text.split('\n\n').map((para, i) => (
+            <p key={i} style={{ marginBottom:'1.5em', textIndent:'1.5em', textWrap:'pretty' }}>{para}</p>
+          ))}
+          <p style={{ textIndent:'1.5em', textWrap:'pretty' }}>
+            As coisas têm vida própria — apregoava o cigano com áspero sotaque —,{' '}
+            <mark style={{ background:'rgba(100,60,0,0.15)', padding:'1px 0', borderRadius:2 }}>tudo é questão de despertar-lhes a alma.</mark>
+            {' '}José Arcádio Buendía, cuja desmedida imaginação ia sempre além do engenho da natureza.
+          </p>
+        </div>
+      </div>
+
+      {/* Bottom progress bar only */}
+      <div style={{ height:2, background:t.border, flexShrink:0 }}>
+        <div style={{ width:'34%', height:'100%', background:t.text, opacity:0.3 }}/>
+      </div>
+
+      {/* iOS home indicator */}
+      <div style={{ height:34, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        <div style={{ width:134, height:5, background:t.text, borderRadius:99, opacity:0.2 }}/>
+      </div>
+    </div>
+  );
+};
+
+/* ─── MOCKUP 8: SETTINGS — TYPOGRAPHY CONTROLS ──────────────────── */
+const M8_Settings = () => {
+  const t = T.paper;
+  const [fontSize, setFontSize] = useState(19);
+  const [lineH, setLineH] = useState(1.65);
+  const [theme, setTheme] = useState('paper');
+  const [font, setFont] = useState('serif');
+
+  const previewT = T[theme] || T.paper;
+
+  return (
+    <div style={{ display:'flex', height:'100%', background:t.bg, fontSize:13, color:t.text, fontFamily:"-apple-system,'SF Pro Text','Helvetica Neue',sans-serif" }}>
+      <Sidebar t={t} active="settings"/>
+
+      <div style={{ flex:1, display:'flex', overflow:'hidden' }}>
+        {/* Controls */}
+        <div style={{ width:320, borderRight:`1px solid ${t.border}`, overflowY:'auto', padding:'28px 24px' }}>
+          <div style={{ fontSize:20, fontWeight:700, color:t.text, marginBottom:28 }}>Tipografia & Tema</div>
+
+          {/* Theme */}
+          <div style={{ marginBottom:28 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:t.text2, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Tema</div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
+              {[
+                { id:'paper', label:'Paper', bg:'#FAF8F3', text:'#1A1A1A' },
+                { id:'sepia', label:'Sépia', bg:'#F4ECD8', text:'#3E2723' },
+                { id:'night', label:'Night', bg:'#1C1C1E', text:'#E8DDC8' },
+                { id:'oled', label:'OLED', bg:'#000000', text:'#E5C07B' },
+              ].map(th => (
+                <button key={th.id} onClick={() => setTheme(th.id)} style={{
+                  padding:'12px', borderRadius:10, border:`2px solid ${theme===th.id ? t.text : t.border}`,
+                  background:th.bg, cursor:'pointer', textAlign:'left',
+                }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:th.text }}>{th.label}</div>
+                  <div style={{ fontSize:10, color:th.text, opacity:0.5, marginTop:2 }}>{th.bg}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Font family */}
+          <div style={{ marginBottom:28 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:t.text2, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Família tipográfica</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {[
+                { id:'serif', label:'Lora', sub:'Serif · Leitura longa', preview:'Aa' },
+                { id:'sans', label:'SF Pro', sub:'Sans · Texto técnico', preview:'Aa' },
+                { id:'dyslexic', label:'Atkinson Hyperlegible', sub:'Acessibilidade', preview:'Aa' },
+              ].map(f => (
+                <button key={f.id} onClick={() => setFont(f.id)} style={{
+                  display:'flex', alignItems:'center', gap:12, padding:'12px 14px',
+                  border:`2px solid ${font===f.id ? t.text : t.border}`, borderRadius:10,
+                  background: font===f.id ? t.surface : 'transparent', cursor:'pointer', textAlign:'left',
+                }}>
+                  <div style={{
+                    width:40, height:40, borderRadius:8, background:t.border,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontFamily: f.id==='serif' ? "'Lora',serif" : '-apple-system,sans-serif',
+                    fontSize:18, fontWeight:600, color:t.text, flexShrink:0,
+                  }}>{f.preview}</div>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:600, color:t.text }}>{f.label}</div>
+                    <div style={{ fontSize:11, color:t.text3 }}>{f.sub}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Font size */}
+          <div style={{ marginBottom:20 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:t.text2, textTransform:'uppercase', letterSpacing:1 }}>Tamanho</div>
+              <div style={{ fontSize:13, fontWeight:700, color:t.text }}>{fontSize}px</div>
+            </div>
+            <input type="range" min={14} max={26} step={1} value={fontSize} onChange={e => setFontSize(Number(e.target.value))}
+              style={{ width:'100%', accentColor:t.text }}/>
+            <div style={{ display:'flex', justifyContent:'space-between', marginTop:4, fontSize:10, color:t.text3 }}>
+              <span>14px</span><span>26px</span>
+            </div>
+          </div>
+
+          {/* Line height */}
+          <div style={{ marginBottom:20 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:t.text2, textTransform:'uppercase', letterSpacing:1 }}>Entrelinhamento</div>
+              <div style={{ fontSize:13, fontWeight:700, color:t.text }}>{lineH.toFixed(2)}×</div>
+            </div>
+            <input type="range" min={1.4} max={2.0} step={0.05} value={lineH} onChange={e => setLineH(Number(e.target.value))}
+              style={{ width:'100%', accentColor:t.text }}/>
+            <div style={{ display:'flex', justifyContent:'space-between', marginTop:4, fontSize:10, color:t.text3 }}>
+              <span>1.40×</span><span>2.00×</span>
+            </div>
+          </div>
+
+          <div style={{ padding:'12px', background:t.surface, borderRadius:10, border:`1px solid ${t.border}`, fontSize:11, color:t.text2, lineHeight:1.6 }}>
+            <span style={{ fontWeight:600, color:t.text }}>WCAG AAA</span> · Contraste mínimo 7:1 · Largura de medida 55–75 chars
+          </div>
+        </div>
+
+        {/* Live preview */}
+        <div style={{ flex:1, background:previewT.bg, overflowY:'auto', padding:'40px', display:'flex', justifyContent:'center' }}>
+          <div style={{ maxWidth:640, width:'100%' }}>
+            <div style={{ fontSize:11, color:previewT.text3, marginBottom:24, fontFamily:"-apple-system,sans-serif", display:'flex', alignItems:'center', gap:8 }}>
+              <span>Pré-visualização · Cap. 3 · pág. 147</span>
+            </div>
+            <div style={{
+              fontFamily: font==='serif' ? "'Lora', Georgia, serif" : "-apple-system, 'SF Pro Text', sans-serif",
+              fontSize, lineHeight:lineH, color:previewT.text,
+            }}>
+              <p style={{ marginBottom:'1.5em', textIndent:'2em', textWrap:'pretty' }}>
+                No dia em que o coronel Aureliano Buendía havia de lembrar-se daquela tarde remota em que seu pai o levou para conhecer o gelo, Macondo era uma aldeia de vinte casas de barro e cana brava construída à beira de um rio de águas diáfanas que se precipitavam por um leito de pedras polidas, brancas e enormes como ovos pré-históricos.
+              </p>
+              <p style={{ marginBottom:'1.5em', textIndent:'2em', textWrap:'pretty' }}>
+                O mundo era tão recente que muitas coisas careciam de nome e para mencioná-las se precisava apontar com o dedo. Todos os anos, lá pelo mês de março, uma família de ciganos maltrapilhos armava sua tenda perto da aldeia e, com grande alvoroço de apitos e timbales, exibia as novas invenções.
+              </p>
+              <p style={{ textIndent:'2em', textWrap:'pretty' }}>
+                As coisas têm vida própria — apregoava o cigano —,{' '}
+                <mark style={{ background:`rgba(${previewT.bg==='#1C1C1E'||previewT.bg==='#000000'?'229,192,123':'120,80,20'},${previewT.bg==='#1C1C1E'||previewT.bg==='#000000'?0.2:0.15})`, padding:'1px 0', borderRadius:2 }}>tudo é questão de despertar-lhes a alma.</mark>
+                {' '}José Arcádio Buendía pensou que era possível servir-se daquela invenção para desentranhar o ouro da terra.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── CANVAS ─────────────────────────────────────────────────────── */
+const App = () => (
+  <DesignCanvas title="Cat Epub — Mockups">
+    <DCSection id="reading" title="Experiência de Leitura">
+      <DCArtboard id="immersion" label="Imersão Total · Paper" width={1200} height={760}>
+        <M2_ReaderImmersion/>
+      </DCArtboard>
+      <DCArtboard id="overlay" label="Overlay de Controlos · Night" width={1200} height={760}>
+        <M3_ReaderOverlay/>
+      </DCArtboard>
+      <DCArtboard id="mobile" label="Mobile · Sépia" width={390} height={760}>
+        <M7_Mobile/>
+      </DCArtboard>
+    </DCSection>
+
+    <DCSection id="app" title="Aplicação Principal">
+      <DCArtboard id="home" label="Ecrã Inicial · Paper" width={1200} height={760}>
+        <M1_Home/>
+      </DCArtboard>
+      <DCArtboard id="knowledge" label="Highlights & Anotações · Sépia" width={1280} height={760}>
+        <M4_Knowledge/>
+      </DCArtboard>
+    </DCSection>
+
+    <DCSection id="advanced" title="Funcionalidades Avançadas">
+      <DCArtboard id="ai" label="Chat com o Livro (IA) · Night" width={1280} height={760}>
+        <M5_AI/>
+      </DCArtboard>
+      <DCArtboard id="flashcards" label="Flashcards · FSRS · Paper" width={1200} height={760}>
+        <M6_Flashcards/>
+      </DCArtboard>
+      <DCArtboard id="settings" label="Tipografia ao Vivo · Paper" width={1280} height={760}>
+        <M8_Settings/>
+      </DCArtboard>
+    </DCSection>
+  </DesignCanvas>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

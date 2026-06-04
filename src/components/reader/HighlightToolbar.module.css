@@ -1,0 +1,95 @@
+.toolbar {
+  position: fixed;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow-md);
+  user-select: none;
+  pointer-events: auto;
+  animation: pop 0.12s ease-out;
+}
+
+@keyframes pop {
+  from {
+    transform: translate(-50%, calc(-100% - 4px)) scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, calc(-100% - 12px)) scale(1);
+    opacity: 1;
+  }
+}
+
+.colorButton {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s, border-color 0.1s;
+}
+
+.colorButton:hover {
+  transform: scale(1.1);
+  border-color: var(--border-strong);
+}
+
+.colorButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 2px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: color 0.15s, background 0.15s;
+}
+
+.actionButton:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.actionButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.actionButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.danger {
+  color: #c75050;
+}
+
+.danger:hover {
+  color: #a03838;
+  background: rgba(199, 80, 80, 0.1);
+}

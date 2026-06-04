@@ -1,0 +1,82 @@
+.session {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.sessionLabel {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+
+.signInRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.signInRow > input {
+  flex: 1;
+}
+
+.signInMsg {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--text-2);
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.statusLabel {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+
+.statusSyncing {
+  color: var(--text);
+}
+
+.statusError {
+  color: #c75050;
+}
+
+.btn {
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--text);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}

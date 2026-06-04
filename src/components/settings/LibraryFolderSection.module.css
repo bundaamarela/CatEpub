@@ -1,0 +1,57 @@
+.row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.row input {
+  flex: 1;
+}
+
+.btn {
+  flex-shrink: 0;
+  padding: 0.55rem 1rem;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.12s;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  border-color: var(--border-strong);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnScan {
+  margin-bottom: 0.5rem;
+}
+
+.msg {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--text-3);
+  margin: 0.25rem 0 0.75rem;
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.warn {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--warn, #c97a00);
+  margin: 0.25rem 0;
+}
