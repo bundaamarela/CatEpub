@@ -1,6 +1,9 @@
-import { type FC, useRef, useState } from 'react';
+import { type FC, useCallback, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { categoriseBook, type CategoriseSuggestion } from '@/lib/ai/categorise';
+import { isAiEnabled } from '@/lib/ai/client';
+import * as booksDb from '@/lib/db/books';
 import { importEpubFile, type ImportProgress, type ImportResult } from '@/lib/epub/import';
 import { BOOK_QUERY_KEYS } from '@/lib/store/library';
 import { convertFileToEpub, isConvertible } from '@/lib/tauri/convert';
@@ -10,9 +13,11 @@ import styles from './ImportDropzone.module.css';
 
 interface ToastItem {
   id: string;
-  kind: 'progress' | 'success' | 'duplicate' | 'error';
+  kind: 'progress' | 'success' | 'duplicate' | 'error' | 'suggest';
   title: string;
   detail?: string;
+  bookId?: string;
+  suggestion?: CategoriseSuggestion;
 }
 
 const STAGE_LABEL: Record<ImportProgress['stage'], string> = {
@@ -27,7 +32,6 @@ const ACCEPT_ALL =
 const ACCEPT_EPUB = '.epub,application/epub+zip';
 
 interface Props {
-  /** Limita o tamanho aceite. Default: 100 MB. */
   maxBytes?: number;
 }
 
@@ -41,11 +45,52 @@ export const ImportDropzone: FC<Props> = ({ maxBytes = 100 * 1024 * 1024 }) => {
   const pushToast = (toast: ToastItem): void => {
     setToasts((prev) => [...prev.filter((t) => t.id !== toast.id), toast]);
   };
-  const removeToastSoon = (id: string, ms = 4500): void => {
-    window.setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, ms);
+  const removeToast = (id: string): void => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
   };
+  const removeToastSoon = (id: string, ms = 4500): void => {
+    window.setTimeout(() => removeToast(id), ms);
+  };
+
+  const acceptSuggestion = useCallback(
+    async (toast: ToastItem): Promise<void> => {
+      if (toast.bookId === undefined || toast.suggestion === undefined) return;
+      const book = await booksDb.getById(toast.bookId);
+      if (book === undefined) return;
+
+      const merged = new Set([...book.tags, ...toast.suggestion.tags]);
+      await booksDb.update(toast.bookId, {
+        category: toast.suggestion.category,
+        tags: [...merged],
+        ...(toast.suggestion.language.length > 0 ? { language: toast.suggestion.language } : {}),
+      });
+      await qc.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.all });
+      removeToast(toast.id);
+    },
+    [qc],
+  );
+
+  const triggerCategorisation = useCallback(
+    (bookId: string, title: string): void => {
+      void (async () => {
+        const book = await booksDb.getById(bookId);
+        if (book === undefined) return;
+        const suggestion = await categoriseBook(book.title, book.author, book.description);
+        if (suggestion === null) return;
+
+        const suggestId = `suggest-${bookId}`;
+        pushToast({
+          id: suggestId,
+          kind: 'suggest',
+          title,
+          detail: `Categoria sugerida: ${suggestion.category}`,
+          bookId,
+          suggestion,
+        });
+      })();
+    },
+    [],
+  );
 
   const handleFiles = async (files: FileList | File[]): Promise<void> => {
     const list = Array.from(files);
@@ -107,6 +152,9 @@ export const ImportDropzone: FC<Props> = ({ maxBytes = 100 * 1024 * 1024 }) => {
           case 'imported':
             pushToast({ id, kind: 'success', title: result.title, detail: 'Importado' });
             removeToastSoon(id);
+            if (isAiEnabled()) {
+              triggerCategorisation(result.bookId, result.title);
+            }
             break;
           case 'duplicate':
             pushToast({
@@ -147,10 +195,29 @@ export const ImportDropzone: FC<Props> = ({ maxBytes = 100 * 1024 * 1024 }) => {
                 t.kind === 'success' && styles.toastSuccess,
                 t.kind === 'duplicate' && styles.toastDuplicate,
                 t.kind === 'error' && styles.toastError,
+                t.kind === 'suggest' && styles.toastSuggest,
               )}
             >
               <span className={cn(styles.toastTitle)}>{t.title}</span>
               {t.detail && <span className={cn(styles.toastDetail)}>{t.detail}</span>}
+              {t.kind === 'suggest' && (
+                <span className={cn(styles.toastActions)}>
+                  <button
+                    type="button"
+                    className={cn(styles.toastBtn, styles.toastBtnAccept)}
+                    onClick={() => void acceptSuggestion(t)}
+                  >
+                    Aceitar
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(styles.toastBtn)}
+                    onClick={() => removeToast(t.id)}
+                  >
+                    Ignorar
+                  </button>
+                </span>
+              )}
             </div>
           ))}
         </div>
