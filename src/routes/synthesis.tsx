@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { CatEmpty } from '@/components/icons';
 import { isAiEnabled } from '@/lib/ai/client';
 import { synthesiseAcrossLibrary, type SynthesisResult } from '@/lib/ai/synthesis';
+import { recordStep } from '@/lib/knowledge/trails';
 import { useBooks } from '@/lib/store/library';
 import { cn } from '@/lib/utils/cn';
 import { renderMarkdown } from '@/lib/utils/markdown';
@@ -122,7 +123,20 @@ const Synthesis = () => {
             <div className={cn(styles.sources)}>
               {result.sources.map((s, i) => (
                 <div key={i} className={cn(styles.source)}>
-                  <Link to={`/reader/${s.bookId}`} className={cn(styles.sourceBook)}>
+                  <Link
+                    to={`/reader/${s.bookId}`}
+                    className={cn(styles.sourceBook)}
+                    onClick={() => {
+                      void recordStep({
+                        fromType: 'synthesis',
+                        fromId: 'synthesis',
+                        toType: 'book',
+                        toId: s.bookId,
+                        toBookId: s.bookId,
+                        source: 'synthesis-citation',
+                      });
+                    }}
+                  >
                     {s.bookTitle}
                   </Link>
                   <p className={cn(styles.sourceText)}>{s.chunkText}</p>

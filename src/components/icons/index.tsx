@@ -199,6 +199,15 @@ export const PauseIcon: FC<IconProps> = ({ size, ...rest }) => (
   </svg>
 );
 
+export const TrailsIcon: FC<IconProps> = ({ size, ...rest }) => (
+  <svg {...baseProps(size, rest)}>
+    <circle cx="6" cy="6" r="2" />
+    <circle cx="18" cy="12" r="2" />
+    <circle cx="9" cy="19" r="2" />
+    <path d="M7.5 7.5 16 11M16.5 13.5 11 17.5" strokeDasharray="2 2" />
+  </svg>
+);
+
 export const SynthesisIcon: FC<IconProps> = ({ size, ...rest }) => (
   <svg {...baseProps(size, rest)}>
     <path d="M12 3v4" />

@@ -8,6 +8,7 @@ import type { Flashcard, ReadingSession } from '@/types/flashcard';
 import type { Highlight } from '@/types/highlight';
 import type { Preferences } from '@/types/prefs';
 import type { SyncQueueItem } from '@/types/sync';
+import type { TrailStep } from '@/types/trail';
 
 /**
  * Linha persistida no `prefs`: as preferências canónicas + metadados internos
@@ -33,6 +34,7 @@ export class CatEpubDB extends Dexie {
   embeddings!: Table<Embedding, string>;
   syncQueue!: Table<SyncQueueItem, string>;
   backlinks!: Table<Backlink, string>;
+  trailSteps!: Table<TrailStep, string>;
 
   constructor(name = 'CatEpub') {
     super(name);
@@ -56,6 +58,9 @@ export class CatEpubDB extends Dexie {
     });
     this.version(4).stores({
       backlinks: 'id, sourceId, targetId',
+    });
+    this.version(5).stores({
+      trailSteps: 'id, sessionId, timestamp, fromId, toId',
     });
   }
 }

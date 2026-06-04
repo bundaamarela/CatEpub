@@ -10,6 +10,7 @@ import {
   type ContradictionVerdict,
 } from '@/lib/knowledge/contradictions';
 import { buildSemanticEdges, type Edge, type GraphNode } from '@/lib/knowledge/graph';
+import { recordStep } from '@/lib/knowledge/trails';
 import { useAllHighlights } from '@/lib/store/highlights';
 import { useBooks } from '@/lib/store/library';
 import { cn } from '@/lib/utils/cn';
@@ -211,6 +212,15 @@ const Graph = () => {
       .on('dblclick', (_event: MouseEvent, d: SimNode) => {
         const hl = allHighlights.find((h) => h.id === d.id);
         if (hl !== undefined) {
+          void recordStep({
+            fromType: 'highlight',
+            fromId: d.id,
+            fromBookId: d.bookId,
+            toType: 'book',
+            toId: hl.bookId,
+            toBookId: hl.bookId,
+            source: 'graph-click',
+          });
           void navigate(`/reader/${hl.bookId}`, { state: { cfi: hl.cfiRange } });
         }
       });

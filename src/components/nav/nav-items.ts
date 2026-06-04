@@ -8,6 +8,7 @@ import {
   SearchIcon,
   SettingsIcon,
   SynthesisIcon,
+  TrailsIcon,
 } from '@/components/icons';
 import type { ComponentType, SVGProps } from 'react';
 
@@ -26,6 +27,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: '/graph', label: 'Grafo', icon: GraphIcon },
   { to: '/concepts', label: 'Conceitos', icon: ConceptsIcon },
   { to: '/synthesis', label: 'Síntese', icon: SynthesisIcon },
+  { to: '/trails', label: 'Trilhos', icon: TrailsIcon },
   { to: '/settings', label: 'Definições', icon: SettingsIcon },
 ];
 
