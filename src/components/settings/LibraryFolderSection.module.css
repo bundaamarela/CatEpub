@@ -43,24 +43,15 @@
   margin: 0.25rem 0 0.75rem;
 }
 
-.list {
-  list-style: none;
-  padding: 0;
-  margin: 0.5rem 0 0;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
-.item {
-  padding: 0.4rem 0.75rem;
+.warn {
   font-family: var(--font-sans);
   font-size: 0.82rem;
-  color: var(--text-2);
-  border-bottom: 1px solid var(--border);
-}
-
-.item:last-child {
-  border-bottom: none;
+  color: var(--warn, #c97a00);
+  margin: 0.25rem 0;
 }

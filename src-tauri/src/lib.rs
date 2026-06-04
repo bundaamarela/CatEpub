@@ -1,16 +1,17 @@
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
+use std::time::Duration;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tauri::{AppHandle, Emitter, Manager};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
-pub struct EpubFile {
+pub struct FolderChange {
     pub path: String,
-    pub name: String,
+    pub kind: String,
 }
 
-/// Recursively walks `dir` and collects all .epub files.
-fn collect_epubs(dir: &Path) -> Vec<EpubFile> {
+fn collect_epubs(dir: &Path) -> Vec<String> {
     let mut result = Vec::new();
     let Ok(entries) = std::fs::read_dir(dir) else {
         return result;
@@ -23,66 +24,91 @@ fn collect_epubs(dir: &Path) -> Vec<EpubFile> {
             .and_then(|e| e.to_str())
             .is_some_and(|e| e.eq_ignore_ascii_case("epub"))
         {
-            let name = p
-                .file_name()
-                .map(|n| n.to_string_lossy().into_owned())
-                .unwrap_or_default();
-            result.push(EpubFile {
-                path: p.to_string_lossy().into_owned(),
-                name,
-            });
+            result.push(p.to_string_lossy().into_owned());
         }
     }
     result
 }
 
 #[tauri::command]
-fn scan_library_folder(path: String) -> Vec<EpubFile> {
-    collect_epubs(Path::new(&path))
+fn scan_library_folder(path: String) -> Vec<String> {
+    let p = Path::new(&path);
+    if !p.exists() {
+        return Vec::new();
+    }
+    collect_epubs(p)
 }
 
-// Global watcher kept alive for the lifetime of the app.
+#[tauri::command]
+fn path_exists(path: String) -> bool {
+    Path::new(&path).exists()
+}
+
+#[tauri::command]
+fn read_epub_file(path: String) -> Result<Vec<u8>, String> {
+    std::fs::read(&path).map_err(|e| e.to_string())
+}
+
+static WATCHER_GEN: AtomicU64 = AtomicU64::new(0);
 static WATCHER: OnceLock<Mutex<Option<RecommendedWatcher>>> = OnceLock::new();
 
 #[tauri::command]
 fn watch_library_folder(path: String, app: AppHandle) -> Result<(), String> {
+    let gen = WATCHER_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+
     let slot = WATCHER.get_or_init(|| Mutex::new(None));
-    let mut guard = slot.lock().map_err(|e| e.to_string())?;
+    if let Ok(mut g) = slot.lock() {
+        *g = None;
+    }
 
-    // Stop any existing watcher before starting a new one.
-    *guard = None;
+    std::thread::spawn(move || {
+        loop {
+            if WATCHER_GEN.load(Ordering::SeqCst) != gen {
+                return;
+            }
 
-    let app_clone = app.clone();
-    let mut watcher = notify::recommended_watcher(move |res: notify::Result<Event>| {
-        let Ok(event) = res else { return };
-        match event.kind {
-            EventKind::Create(_) | EventKind::Modify(_) => {
-                for p in &event.paths {
-                    if p.extension()
-                        .and_then(|e| e.to_str())
-                        .is_some_and(|e| e.eq_ignore_ascii_case("epub"))
-                    {
-                        let file = EpubFile {
-                            path: p.to_string_lossy().into_owned(),
-                            name: p
-                                .file_name()
-                                .map(|n| n.to_string_lossy().into_owned())
-                                .unwrap_or_default(),
+            if Path::new(&path).exists() {
+                let app_for_watcher = app.clone();
+                let watcher_result = notify::recommended_watcher(
+                    move |res: notify::Result<Event>| {
+                        let Ok(event) = res else { return };
+                        let kind_str = match event.kind {
+                            EventKind::Create(_) => "added",
+                            EventKind::Remove(_) => "removed",
+                            _ => return,
                         };
-                        let _ = app_clone.emit("library-folder-changed", file);
+                        for p in &event.paths {
+                            if p.extension()
+                                .and_then(|e| e.to_str())
+                                .is_some_and(|e| e.eq_ignore_ascii_case("epub"))
+                            {
+                                let payload = FolderChange {
+                                    path: p.to_string_lossy().into_owned(),
+                                    kind: kind_str.to_string(),
+                                };
+                                let _ = app_for_watcher.emit("library-folder-changed", payload);
+                            }
+                        }
+                    },
+                );
+
+                if let Ok(mut watcher) = watcher_result {
+                    if watcher
+                        .watch(Path::new(&path), RecursiveMode::Recursive)
+                        .is_ok()
+                    {
+                        if let Ok(mut g) = slot.lock() {
+                            *g = Some(watcher);
+                        }
+                        return;
                     }
                 }
             }
-            _ => {}
+
+            std::thread::sleep(Duration::from_secs(30));
         }
-    })
-    .map_err(|e| e.to_string())?;
+    });
 
-    watcher
-        .watch(Path::new(&path), RecursiveMode::Recursive)
-        .map_err(|e| e.to_string())?;
-
-    *guard = Some(watcher);
     Ok(())
 }
 
@@ -114,6 +140,8 @@ pub fn run() {
             scan_library_folder,
             watch_library_folder,
             pick_folder,
+            path_exists,
+            read_epub_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
