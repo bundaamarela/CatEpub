@@ -10,6 +10,9 @@ import {
 } from 'ts-fsrs';
 
 import * as flashcards from '@/lib/db/flashcards';
+import * as highlightsDb from '@/lib/db/highlights';
+import * as booksDb from '@/lib/db/books';
+import { getRelatedIdeas } from '@/lib/knowledge/graph';
 import type { Flashcard, FlashcardState } from '@/types/flashcard';
 
 export type ReviewRating = 'again' | 'hard' | 'good' | 'easy';
@@ -127,3 +130,30 @@ export const getDueCards = async (
 /** Contagem total de cards 'due' (em todos os livros). */
 export const getDueCount = async (now: Date = new Date()): Promise<number> =>
   flashcards.countDue(now);
+
+/**
+ * Returns the main flashcard for a highlight plus up to 3 flashcards from
+ * semantically-related highlights in other books (uses graph.ts under the hood).
+ * The main card is always at index 0; related cards follow. Limited to 4 total.
+ */
+export const getDueCluster = async (highlightId: string): Promise<Flashcard[]> => {
+  const mainCards = await flashcards.getByHighlight(highlightId);
+  if (mainCards.length === 0) return [];
+  const mainCard = mainCards[0];
+  if (mainCard === undefined) return [];
+
+  const allHighlights = await highlightsDb.getAll();
+  const allBooks = await booksDb.getAll();
+  const related = await getRelatedIdeas(highlightId, allHighlights, allBooks, 3);
+
+  const cluster: Flashcard[] = [mainCard];
+  for (const r of related) {
+    const cards = await flashcards.getByHighlight(r.highlight.id);
+    if (cards.length === 0) continue;
+    const card = cards[0];
+    if (card !== undefined) cluster.push(card);
+    if (cluster.length >= 4) break;
+  }
+
+  return cluster;
+};
