@@ -16,6 +16,7 @@ export const router = createBrowserRouter([
       { path: 'notes', Component: lazy(() => import('./notes')) },
       { path: 'review', Component: lazy(() => import('./review')) },
       { path: 'graph', Component: lazy(() => import('./graph')) },
+      { path: 'concepts', Component: lazy(() => import('./concepts')) },
       { path: 'settings', Component: lazy(() => import('./settings')) },
     ],
   },

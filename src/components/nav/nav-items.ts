@@ -1,4 +1,5 @@
 import {
+  ConceptsIcon,
   GraphIcon,
   HomeIcon,
   LibraryIcon,
@@ -22,6 +23,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: '/notes', label: 'Notas', icon: NotesIcon },
   { to: '/review', label: 'Revisão', icon: ReviewIcon },
   { to: '/graph', label: 'Grafo', icon: GraphIcon },
+  { to: '/concepts', label: 'Conceitos', icon: ConceptsIcon },
   { to: '/settings', label: 'Definições', icon: SettingsIcon },
 ];
 
