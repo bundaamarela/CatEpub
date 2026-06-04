@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 
+import type { Backlink } from '@/types/backlink';
 import type { Book, ReadingPosition } from '@/types/book';
 import type { Bookmark, Note } from '@/types/note';
 import type { Embedding } from '@/types/embedding';
@@ -31,6 +32,7 @@ export class CatEpubDB extends Dexie {
   prefs!: Table<PreferencesRow, 'singleton'>;
   embeddings!: Table<Embedding, string>;
   syncQueue!: Table<SyncQueueItem, string>;
+  backlinks!: Table<Backlink, string>;
 
   constructor(name = 'CatEpub') {
     super(name);
@@ -51,6 +53,9 @@ export class CatEpubDB extends Dexie {
     this.version(3).stores({
       // Offline sync queue: drained when connectivity returns.
       syncQueue: 'id, table, createdAt',
+    });
+    this.version(4).stores({
+      backlinks: 'id, sourceId, targetId',
     });
   }
 }

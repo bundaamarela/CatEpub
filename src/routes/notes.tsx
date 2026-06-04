@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 
 import { cn } from '@/lib/utils/cn';
+import * as backlinksDb from '@/lib/db/backlinks';
 import { downloadAsFile, exportBookMarkdown } from '@/lib/notes/export';
 import { renderMarkdown } from '@/lib/utils/markdown';
 import { useAllHighlights } from '@/lib/store/highlights';
 import { useBooks } from '@/lib/store/library';
+import type { Backlink } from '@/types/backlink';
 import type { Book } from '@/types/book';
 import type { Highlight, HighlightColor } from '@/types/highlight';
 import styles from './Notes.module.css';
@@ -33,6 +36,10 @@ const matchesSearch = (h: Highlight, needle: string): boolean => {
 const Notes = () => {
   const booksQuery = useBooks();
   const highlightsQuery = useAllHighlights();
+  const backlinksQuery = useQuery({
+    queryKey: ['backlinks', 'all'],
+    queryFn: () => backlinksDb.getAll(),
+  });
   const [search, setSearch] = useState('');
 
   const grouped = useMemo(() => {
@@ -54,6 +61,22 @@ const Notes = () => {
         ),
       }));
   }, [booksQuery.data, highlightsQuery.data, search]);
+
+  const backlinksByTarget = useMemo(() => {
+    const all: ReadonlyArray<Backlink> = backlinksQuery.data ?? [];
+    const map = new Map<string, Backlink[]>();
+    for (const bl of all) {
+      const list = map.get(bl.targetId);
+      if (list) list.push(bl);
+      else map.set(bl.targetId, [bl]);
+    }
+    return map;
+  }, [backlinksQuery.data]);
+
+  const allHighlightsFlat = useMemo(
+    () => highlightsQuery.data ?? [],
+    [highlightsQuery.data],
+  );
 
   const totalHighlights = grouped.reduce((sum, g) => sum + g.highlights.length, 0);
 
@@ -143,6 +166,19 @@ const Notes = () => {
                   {new Date(h.createdAt).toLocaleDateString('pt-PT')}
                 </span>
               </div>
+              {(backlinksByTarget.get(h.id) ?? []).length > 0 && (
+                <div className={cn(styles.backlinks)}>
+                  <span className={cn(styles.backlinksLabel)}>Referenciado por:</span>
+                  {(backlinksByTarget.get(h.id) ?? []).map((bl) => {
+                    const src = allHighlightsFlat.find((x) => x.id === bl.sourceId);
+                    return (
+                      <span key={bl.id} className={cn(styles.backlinkChip)}>
+                        {src ? `"${src.text.slice(0, 40)}…"` : bl.sourceId.slice(0, 8)}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </article>
           ))}
         </section>

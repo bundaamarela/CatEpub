@@ -1,6 +1,7 @@
 import { type FC, useMemo, useState } from 'react';
 
 import { TagInput } from '@/components/shared/TagInput';
+import { type WikiCandidate, WikiLinkEditor } from '@/components/shared/WikiLinkEditor';
 import { cn } from '@/lib/utils/cn';
 import { renderMarkdown } from '@/lib/utils/markdown';
 import type { Highlight, HighlightColor } from '@/types/highlight';
@@ -11,6 +12,7 @@ interface Props {
   onJumpTo: (cfiRange: string) => void;
   onUpdate: (id: string, patch: Partial<Highlight>) => void;
   onRemove: (id: string) => void;
+  wikiCandidates?: ReadonlyArray<WikiCandidate>;
 }
 
 const COLOR_VARS: Record<HighlightColor, string> = {
@@ -23,7 +25,7 @@ const COLOR_VARS: Record<HighlightColor, string> = {
 
 const COLORS: ReadonlyArray<HighlightColor> = ['yellow', 'green', 'blue', 'pink', 'purple'];
 
-export const PanelNotes: FC<Props> = ({ highlights, onJumpTo, onUpdate, onRemove }) => {
+export const PanelNotes: FC<Props> = ({ highlights, onJumpTo, onUpdate, onRemove, wikiCandidates }) => {
   const [colorFilter, setColorFilter] = useState<HighlightColor | null>(null);
   const [tagFilter, setTagFilter] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
@@ -120,11 +122,12 @@ export const PanelNotes: FC<Props> = ({ highlights, onJumpTo, onUpdate, onRemove
                 />
               )}
               {isEditing && (
-                <textarea
+                <WikiLinkEditor
                   className={cn(styles.noteEditor)}
                   value={draftNote}
-                  onChange={(e) => setDraftNote(e.target.value)}
-                  placeholder="Nota em markdown…"
+                  onChange={setDraftNote}
+                  candidates={wikiCandidates ?? []}
+                  placeholder="Nota em markdown… (usa [[ para ligar)"
                   autoFocus
                 />
               )}

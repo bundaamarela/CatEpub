@@ -30,6 +30,8 @@ import * as books from '@/lib/db/books';
 import * as bookmarksDb from '@/lib/db/bookmarks';
 import * as flashcardsDb from '@/lib/db/flashcards';
 import * as notesDb from '@/lib/db/notes';
+import { getAutocompleteCandidates } from '@/lib/knowledge/backlinks';
+import { refreshBacklinksForSource } from '@/lib/knowledge/persist-backlinks';
 import { generateWithAi, highlightToCard } from '@/lib/srs/card-generator';
 import type { EpubAnnotation, EpubRenderer, RendererOptions } from '@/lib/epub/renderer';
 import type { FoliateTOCItem } from 'foliate-js/view.js';
@@ -40,7 +42,7 @@ import {
   useRemoveHighlight,
   useUpdateHighlight,
 } from '@/lib/store/highlights';
-import { BOOK_QUERY_KEYS, useBook } from '@/lib/store/library';
+import { BOOK_QUERY_KEYS, useBook, useBooks } from '@/lib/store/library';
 import { usePrefs } from '@/lib/store/prefs';
 import { readColorToken } from '@/lib/theme/colors';
 import { useAutoTheme } from '@/lib/theme/useAutoTheme';
@@ -236,6 +238,17 @@ const Reader = () => {
   }, [persistPosition, queryClient]);
 
   const allHighlights = useMemo(() => highlightsQuery.data ?? [], [highlightsQuery.data]);
+
+  const allBooksQuery = useBooks();
+  const allNotesQuery = useQuery({
+    queryKey: ['notes', 'all'],
+    queryFn: () => notesDb.getAll(),
+  });
+
+  const wikiCandidates = useMemo(
+    () => getAutocompleteCandidates(allNotesQuery.data ?? [], allBooksQuery.data ?? []),
+    [allNotesQuery.data, allBooksQuery.data],
+  );
 
   const allHighlightsRef = useRef(allHighlights);
   useEffect(() => {
@@ -726,17 +739,21 @@ const Reader = () => {
             onUpdate={(hid, patch) => {
               void updateHighlight
                 .mutateAsync({ id: hid, patch })
-                .then(() =>
-                  queryClient.invalidateQueries({
+                .then(() => {
+                  void queryClient.invalidateQueries({
                     queryKey: HIGHLIGHT_QUERY_KEYS.byBook(book.id),
-                  }),
-                );
+                  });
+                  if (patch.note !== undefined) {
+                    void refreshBacklinksForSource(hid, patch.note ?? '');
+                  }
+                });
             }}
             onRemove={(hid) => {
               const h = allHighlights.find((x) => x.id === hid);
               if (h) rendererRef.current?.removeHighlight(h.cfiRange);
               void removeHighlight.mutateAsync(hid);
             }}
+            wikiCandidates={wikiCandidates}
           />
         </PanelOverlay>
       )}
