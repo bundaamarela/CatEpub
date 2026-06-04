@@ -3,6 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { importEpubFile, type ImportProgress, type ImportResult } from '@/lib/epub/import';
 import { BOOK_QUERY_KEYS } from '@/lib/store/library';
+import { convertFileToEpub, isConvertible } from '@/lib/tauri/convert';
+import { isTauri } from '@/lib/tauri/library-scan';
 import { cn } from '@/lib/utils/cn';
 import styles from './ImportDropzone.module.css';
 
@@ -19,6 +21,10 @@ const STAGE_LABEL: Record<ImportProgress['stage'], string> = {
   saving: 'A gravar…',
   done: 'Gravado',
 };
+
+const ACCEPT_ALL =
+  '.epub,application/epub+zip,.pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,text/plain,.html,text/html';
+const ACCEPT_EPUB = '.epub,application/epub+zip';
 
 interface Props {
   /** Limita o tamanho aceite. Default: 100 MB. */
@@ -58,8 +64,42 @@ export const ImportDropzone: FC<Props> = ({ maxBytes = 100 * 1024 * 1024 }) => {
           removeToastSoon(id, 6000);
           continue;
         }
+
+        let importFile = file;
+        if (isConvertible(file.name)) {
+          if (!isTauri()) {
+            pushToast({
+              id,
+              kind: 'error',
+              title: file.name,
+              detail: 'Conversão de formato disponível apenas na app desktop.',
+            });
+            removeToastSoon(id, 6000);
+            continue;
+          }
+          const ext = file.name.split('.').pop()?.toUpperCase() ?? '';
+          pushToast({
+            id,
+            kind: 'progress',
+            title: file.name,
+            detail: `A converter ${ext} para EPUB…`,
+          });
+          const converted = await convertFileToEpub(file);
+          if (converted === null) {
+            pushToast({
+              id,
+              kind: 'error',
+              title: file.name,
+              detail: 'Falha na conversão. Pandoc instalado?',
+            });
+            removeToastSoon(id, 8000);
+            continue;
+          }
+          importFile = converted;
+        }
+
         pushToast({ id, kind: 'progress', title: file.name, detail: STAGE_LABEL.hashing });
-        const result: ImportResult = await importEpubFile(file, (p) => {
+        const result: ImportResult = await importEpubFile(importFile, (p) => {
           pushToast({ id, kind: 'progress', title: file.name, detail: STAGE_LABEL[p.stage] });
         });
 
@@ -138,15 +178,16 @@ export const ImportDropzone: FC<Props> = ({ maxBytes = 100 * 1024 * 1024 }) => {
           }
         }}
         aria-busy={busy}
-        aria-label="Importar ficheiros EPUB"
+        aria-label="Importar ficheiros"
       >
-        Arrasta um <strong>.epub</strong> aqui ou clica para escolher
+        Arrasta um <strong>.epub</strong>{isTauri() ? ', .pdf, .docx, .txt ou .html' : ''} aqui ou
+        clica para escolher
       </button>
 
       <input
         ref={inputRef}
         type="file"
-        accept=".epub,application/epub+zip"
+        accept={isTauri() ? ACCEPT_ALL : ACCEPT_EPUB}
         multiple
         className={cn(styles.input)}
         onChange={(e) => {

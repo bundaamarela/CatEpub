@@ -49,6 +49,43 @@ fn read_epub_file(path: String) -> Result<Vec<u8>, String> {
     std::fs::read(&path).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn save_temp_file(data: Vec<u8>, name: String) -> Result<String, String> {
+    let dir = std::env::temp_dir().join("cat-epub-convert");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(&name);
+    std::fs::write(&path, &data).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn convert_to_epub(input_path: String, output_dir: String) -> Result<String, String> {
+    let input = Path::new(&input_path);
+    let stem = input
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "output".to_string());
+    let out = Path::new(&output_dir).join(format!("{}.epub", stem));
+
+    let status = std::process::Command::new("pandoc")
+        .arg(&input_path)
+        .arg("-o")
+        .arg(&out)
+        .arg("--epub-title")
+        .arg(&stem)
+        .status()
+        .map_err(|e| format!("Pandoc não encontrado: {}", e))?;
+
+    if !status.success() {
+        return Err(format!(
+            "Pandoc falhou com código {}",
+            status.code().unwrap_or(-1)
+        ));
+    }
+
+    Ok(out.to_string_lossy().into_owned())
+}
+
 static WATCHER_GEN: AtomicU64 = AtomicU64::new(0);
 static WATCHER: OnceLock<Mutex<Option<RecommendedWatcher>>> = OnceLock::new();
 
@@ -142,6 +179,8 @@ pub fn run() {
             pick_folder,
             path_exists,
             read_epub_file,
+            save_temp_file,
+            convert_to_epub,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
