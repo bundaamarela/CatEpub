@@ -37,3 +37,7 @@ test-results
 .env
 .env.local
 .env.*.local
+
+# Cover generator artefacts (user-supplied input + generated output)
+scripts/covers_input.json
+scripts/covers_output/

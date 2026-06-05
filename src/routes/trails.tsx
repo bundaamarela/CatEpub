@@ -43,6 +43,7 @@ const Trails = () => {
 
   const today: ReadonlyArray<TrailStep> = todayQuery.data ?? [];
   const trailGraph = graphQuery.data ?? { edges: [], totalSteps: 0 };
+  const hasAnyData = today.length > 0 || trailGraph.totalSteps > 0;
 
   const renderTarget = (s: TrailStep): React.ReactNode => {
     if (s.toType === 'book' && s.toBookId !== undefined) {
@@ -94,79 +95,95 @@ const Trails = () => {
         </p>
       </div>
 
-      <div className={cn(styles.summary)}>
-        <span>
-          <span className={cn(styles.summaryNum)}>{today.length}</span> passos hoje
-        </span>
-        <span>
-          <span className={cn(styles.summaryNum)}>{trailGraph.totalSteps}</span> total acumulado
-        </span>
-        <span>
-          <span className={cn(styles.summaryNum)}>{trailGraph.edges.length}</span> ligações entre
-          livros
-        </span>
-      </div>
-
-      <div className={cn(styles.section)}>
-        <h2 className={cn(styles.sectionTitle)}>Trilho de hoje</h2>
-        {today.length === 0 ? (
-          <div className={cn(styles.empty)}>
-            <CatEmpty size={48} />
-            <p>Sem passos registados hoje. Segue uma ligação no grafo, backlink ou citação.</p>
+      {!hasAnyData ? (
+        <div className={cn(styles.empty)}>
+          <CatEmpty size={48} />
+          <p>
+            Os teus trilhos de leitura aparecerão aqui à medida que navegas entre
+            ideias. Segue uma citação na síntese, clica num nó do grafo ou abre
+            um backlink para registar o primeiro passo.
+          </p>
+          <Link to="/library" className={cn(styles.bookLink)}>
+            Ir para a biblioteca
+          </Link>
+        </div>
+      ) : (
+        <>
+          <div className={cn(styles.summary)}>
+            <span>
+              <span className={cn(styles.summaryNum)}>{today.length}</span> passos hoje
+            </span>
+            <span>
+              <span className={cn(styles.summaryNum)}>{trailGraph.totalSteps}</span> total acumulado
+            </span>
+            <span>
+              <span className={cn(styles.summaryNum)}>{trailGraph.edges.length}</span> ligações entre
+              livros
+            </span>
           </div>
-        ) : (
-          <div className={cn(styles.timeline)}>
-            {today.map((s) => (
-              <div key={s.id} className={cn(styles.step)}>
-                <div className={cn(styles.stepTime)}>
-                  {new Date(s.timestamp).toLocaleTimeString('pt-PT', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </div>
-                <div className={cn(styles.stepDetail)}>
-                  {renderSource(s)}
-                  <span className={cn(styles.arrow)}>→</span>
-                  {renderTarget(s)}
-                  <span className={cn(styles.stepSource)}>{SOURCE_LABEL[s.source]}</span>
-                </div>
+
+          <div className={cn(styles.section)}>
+            <h2 className={cn(styles.sectionTitle)}>Trilho de hoje</h2>
+            {today.length === 0 ? (
+              <div className={cn(styles.empty)}>
+                <CatEmpty size={48} />
+                <p>Sem passos registados hoje. Segue uma ligação no grafo, backlink ou citação.</p>
               </div>
-            ))}
+            ) : (
+              <div className={cn(styles.timeline)}>
+                {today.map((s) => (
+                  <div key={s.id} className={cn(styles.step)}>
+                    <div className={cn(styles.stepTime)}>
+                      {new Date(s.timestamp).toLocaleTimeString('pt-PT', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                    <div className={cn(styles.stepDetail)}>
+                      {renderSource(s)}
+                      <span className={cn(styles.arrow)}>→</span>
+                      {renderTarget(s)}
+                      <span className={cn(styles.stepSource)}>{SOURCE_LABEL[s.source]}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div className={cn(styles.section)}>
-        <h2 className={cn(styles.sectionTitle)}>Mapa de influências</h2>
-        {trailGraph.edges.length === 0 ? (
-          <div className={cn(styles.empty)}>
-            <p>
-              Ainda sem ligações entre livros. À medida que segues ligações, o mapa cresce.
-            </p>
+          <div className={cn(styles.section)}>
+            <h2 className={cn(styles.sectionTitle)}>Mapa de influências</h2>
+            {trailGraph.edges.length === 0 ? (
+              <div className={cn(styles.empty)}>
+                <p>
+                  Ainda sem ligações entre livros. À medida que segues ligações, o mapa cresce.
+                </p>
+              </div>
+            ) : (
+              <div className={cn(styles.influences)}>
+                {trailGraph.edges.slice(0, 20).map((edge) => {
+                  const fromBook = bookMap.get(edge.fromBookId);
+                  const toBook = bookMap.get(edge.toBookId);
+                  return (
+                    <div key={`${edge.fromBookId}::${edge.toBookId}`} className={cn(styles.influence)}>
+                      <Link to={`/reader/${edge.fromBookId}`} className={cn(styles.bookLink)}>
+                        {fromBook?.title ?? edge.fromBookId.slice(0, 8)}
+                      </Link>
+                      <span className={cn(styles.arrow)}>→</span>
+                      <Link to={`/reader/${edge.toBookId}`} className={cn(styles.bookLink)}>
+                        {toBook?.title ?? edge.toBookId.slice(0, 8)}
+                      </Link>
+                      <span className={cn(styles.influenceCount)}>
+                        {edge.count} passo{edge.count !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className={cn(styles.influences)}>
-            {trailGraph.edges.slice(0, 20).map((edge) => {
-              const fromBook = bookMap.get(edge.fromBookId);
-              const toBook = bookMap.get(edge.toBookId);
-              return (
-                <div key={`${edge.fromBookId}::${edge.toBookId}`} className={cn(styles.influence)}>
-                  <Link to={`/reader/${edge.fromBookId}`} className={cn(styles.bookLink)}>
-                    {fromBook?.title ?? edge.fromBookId.slice(0, 8)}
-                  </Link>
-                  <span className={cn(styles.arrow)}>→</span>
-                  <Link to={`/reader/${edge.toBookId}`} className={cn(styles.bookLink)}>
-                    {toBook?.title ?? edge.toBookId.slice(0, 8)}
-                  </Link>
-                  <span className={cn(styles.influenceCount)}>
-                    {edge.count} passo{edge.count !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+        </>
+      )}
     </section>
   );
 };

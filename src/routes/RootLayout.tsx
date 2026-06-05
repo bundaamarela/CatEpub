@@ -1,10 +1,11 @@
-import { type FC, Suspense, useEffect } from 'react';
+import { type FC, Suspense, useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { MobileNav } from '@/components/nav/MobileNav';
 import { MobileTopBar } from '@/components/nav/MobileTopBar';
 import { Sidebar } from '@/components/nav/Sidebar';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
+import { ShortcutsOverlay } from '@/components/shared/ShortcutsOverlay';
 import { useSyncTrigger } from '@/lib/sync/useSyncTrigger';
 import { usePrefs } from '@/lib/store/prefs';
 import { cn } from '@/lib/utils/cn';
@@ -18,6 +19,7 @@ export const RootLayout: FC = () => {
   const navigate = useNavigate();
   const sidebarCollapsed = usePrefs((s) => s.sidebarCollapsed);
   const setSidebarCollapsed = usePrefs((s) => s.setSidebarCollapsed);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   // Mount sync trigger globally — no-op when sync is disabled.
   useSyncTrigger();
 
@@ -29,7 +31,10 @@ export const RootLayout: FC = () => {
         if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
       }
       const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key === 'k') {
+      if (mod && e.shiftKey && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        void navigate('/synthesis');
+      } else if (mod && e.key === 'k') {
         e.preventDefault();
         void navigate('/search');
       } else if (mod && e.key === ',') {
@@ -38,11 +43,25 @@ export const RootLayout: FC = () => {
       } else if (mod && e.key === 'b') {
         e.preventDefault();
         setSidebarCollapsed(!sidebarCollapsed);
+      } else if (mod && (e.key === 'g' || e.key === 'G')) {
+        e.preventDefault();
+        void navigate('/graph');
+      } else if (!mod && e.key === '?') {
+        // Browsers fire '?' as Shift+/, which is fine — only intercept when
+        // there's no modifier other than Shift to avoid stealing search.
+        e.preventDefault();
+        setShortcutsOpen((v) => !v);
+      } else if (e.key === 'Escape' && shortcutsOpen) {
+        setShortcutsOpen(false);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [navigate, sidebarCollapsed, setSidebarCollapsed]);
+  }, [navigate, sidebarCollapsed, setSidebarCollapsed, shortcutsOpen]);
+
+  const shortcuts = (
+    <ShortcutsOverlay open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+  );
 
   // No leitor não há chrome: nem Sidebar, nem MobileNav, nem MobileTopBar
   // são montados (não basta esconder com display:none — os efeitos correriam).
@@ -52,6 +71,7 @@ export const RootLayout: FC = () => {
         <Suspense fallback={<PageSkeleton />}>
           <Outlet />
         </Suspense>
+        {shortcuts}
       </div>
     );
   }
@@ -66,6 +86,7 @@ export const RootLayout: FC = () => {
           </Suspense>
         </main>
         <MobileNav />
+        {shortcuts}
       </div>
     );
   }
@@ -78,6 +99,7 @@ export const RootLayout: FC = () => {
           <Outlet />
         </Suspense>
       </main>
+      {shortcuts}
     </div>
   );
 };

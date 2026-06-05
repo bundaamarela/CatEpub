@@ -34,6 +34,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   ttsRate: 1,
   syncEnabled: false,
   aiProvider: 'none',
+  showQuote: true,
 };
 
 interface PrefsState extends Preferences {
@@ -57,9 +58,14 @@ interface PrefsState extends Preferences {
   setSyncEnabled: (v: boolean) => void;
   setSupabaseUrl: (v: string | undefined) => void;
   setSupabaseKey: (v: string | undefined) => void;
+  setSyncProvider: (p: 'supabase' | 'webdav' | undefined) => void;
+  setWebdavUrl: (v: string | undefined) => void;
+  setWebdavUsername: (v: string | undefined) => void;
+  setWebdavPassword: (v: string | undefined) => void;
   setAiProvider: (p: AiProvider) => void;
   setAiApiKey: (key: string | undefined) => void;
   setLibraryFolder: (path: string | undefined) => void;
+  setShowQuote: (v: boolean) => void;
   reset: () => void;
 }
 
@@ -125,6 +131,50 @@ export const usePrefs = create<PrefsState>()(
           set({ supabaseKey });
         }
       },
+      setSyncProvider: (syncProvider) => {
+        if (syncProvider === undefined) {
+          set((s) => {
+            const { syncProvider: _omit, ...rest } = s;
+            void _omit;
+            return rest as PrefsState;
+          });
+        } else {
+          set({ syncProvider });
+        }
+      },
+      setWebdavUrl: (webdavUrl) => {
+        if (webdavUrl === undefined || webdavUrl.length === 0) {
+          set((s) => {
+            const { webdavUrl: _omit, ...rest } = s;
+            void _omit;
+            return rest as PrefsState;
+          });
+        } else {
+          set({ webdavUrl });
+        }
+      },
+      setWebdavUsername: (webdavUsername) => {
+        if (webdavUsername === undefined || webdavUsername.length === 0) {
+          set((s) => {
+            const { webdavUsername: _omit, ...rest } = s;
+            void _omit;
+            return rest as PrefsState;
+          });
+        } else {
+          set({ webdavUsername });
+        }
+      },
+      setWebdavPassword: (webdavPassword) => {
+        if (webdavPassword === undefined || webdavPassword.length === 0) {
+          set((s) => {
+            const { webdavPassword: _omit, ...rest } = s;
+            void _omit;
+            return rest as PrefsState;
+          });
+        } else {
+          set({ webdavPassword });
+        }
+      },
       setAiProvider: (aiProvider) => set({ aiProvider }),
       setAiApiKey: (aiApiKey) => {
         if (aiApiKey === undefined) {
@@ -148,6 +198,7 @@ export const usePrefs = create<PrefsState>()(
           set({ libraryFolder });
         }
       },
+      setShowQuote: (showQuote) => set({ showQuote }),
       reset: () => {
         applyCurrentTheme(DEFAULT_PREFERENCES.theme);
         set(DEFAULT_PREFERENCES);

@@ -4,17 +4,20 @@ import { Link } from 'react-router-dom';
 import { ContinueReading } from '@/components/home/ContinueReading';
 import { Greeting } from '@/components/home/Greeting';
 import styles from '@/components/home/Home.module.css';
+import { QuoteBlock } from '@/components/home/QuoteBlock';
 import { RecentlyRead } from '@/components/home/RecentlyRead';
 import { StatsBlock } from '@/components/home/StatsBlock';
 import { Welcome } from '@/components/home/Welcome';
 import { isWelcomeDismissed } from '@/components/home/welcome-state';
 import { CatEmpty } from '@/components/icons';
 import { cn } from '@/lib/utils/cn';
+import { usePrefs } from '@/lib/store/prefs';
 import { useBooksWithProgress } from '@/lib/store/library';
 
 const Home = () => {
   const { data, isLoading } = useBooksWithProgress();
   const books = data ?? [];
+  const showQuote = usePrefs((s) => s.showQuote);
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => isWelcomeDismissed());
   const showWelcome = !isLoading && books.length === 0 && !welcomeDismissed;
 
@@ -30,6 +33,7 @@ const Home = () => {
         {!isLoading && !showWelcome && (
           <>
             <StatsBlock books={books} />
+            {showQuote && <QuoteBlock />}
             <ContinueReading books={books} />
             <RecentlyRead books={books} />
 

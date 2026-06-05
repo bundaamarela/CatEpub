@@ -81,11 +81,12 @@ const ToggleRow: FC<ToggleRowProps> = ({ label, checked, onChange, children }) =
 
 const SovereigntySection: FC = () => {
   const [includeEpubs, setIncludeEpubs] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<null | 'arsenal' | 'obsidian' | 'anki' | 'csv'>(null);
   const [progress, setProgress] = useState(0);
+  const [ankiDeck, setAnkiDeck] = useState('CatEpub');
 
   const handleExport = useCallback(async () => {
-    setExporting(true);
+    setExporting('arsenal');
     setProgress(0);
     try {
       const { exportArsenal, downloadBlob } = await import('@/lib/knowledge/export');
@@ -94,11 +95,47 @@ const SovereigntySection: FC = () => {
       downloadBlob(blob, `cat-epub-arsenal-${date}.zip`);
     } finally {
       setTimeout(() => {
-        setExporting(false);
+        setExporting(null);
         setProgress(0);
       }, 500);
     }
   }, [includeEpubs]);
+
+  const handleObsidian = useCallback(async () => {
+    setExporting('obsidian');
+    try {
+      const { exportToObsidian, downloadBlob } = await import('@/lib/knowledge/export');
+      const blob = await exportToObsidian();
+      const date = new Date().toISOString().slice(0, 10);
+      downloadBlob(blob, `cat-epub-obsidian-vault-${date}.zip`);
+    } finally {
+      setExporting(null);
+    }
+  }, []);
+
+  const handleAnki = useCallback(async () => {
+    setExporting('anki');
+    try {
+      const { exportToAnki, downloadBlob } = await import('@/lib/knowledge/export');
+      const blob = await exportToAnki(ankiDeck.trim().length > 0 ? ankiDeck.trim() : 'CatEpub');
+      const date = new Date().toISOString().slice(0, 10);
+      downloadBlob(blob, `cat-epub-anki-${date}.txt`);
+    } finally {
+      setExporting(null);
+    }
+  }, [ankiDeck]);
+
+  const handleCsv = useCallback(async () => {
+    setExporting('csv');
+    try {
+      const { exportHighlightsCsv, downloadBlob } = await import('@/lib/knowledge/export');
+      const blob = await exportHighlightsCsv();
+      const date = new Date().toISOString().slice(0, 10);
+      downloadBlob(blob, `cat-epub-highlights-${date}.csv`);
+    } finally {
+      setExporting(null);
+    }
+  }, []);
 
   return (
     <div className={cn(styles.card)}>
@@ -114,12 +151,12 @@ const SovereigntySection: FC = () => {
       <button
         type="button"
         className={cn(styles.exportBtn)}
-        disabled={exporting}
+        disabled={exporting !== null}
         onClick={() => void handleExport()}
       >
-        {exporting ? 'A exportar…' : 'Exportar arsenal completo'}
+        {exporting === 'arsenal' ? 'A exportar…' : 'Exportar arsenal completo'}
       </button>
-      {exporting && (
+      {exporting === 'arsenal' && (
         <div className={cn(styles.progressBar)}>
           <div className={cn(styles.progressFill)} style={{ width: `${progress}%` }} />
         </div>
@@ -128,6 +165,45 @@ const SovereigntySection: FC = () => {
         Gera um ficheiro ZIP com todas as notas em Markdown, highlights, flashcards e metadados.
         Compatível com Obsidian, Logseq e qualquer editor de texto.
       </p>
+
+      <div className={cn(styles.exportTargets)}>
+        <button
+          type="button"
+          className={cn(styles.exportBtn)}
+          disabled={exporting !== null}
+          onClick={() => void handleObsidian()}
+        >
+          {exporting === 'obsidian' ? 'A exportar…' : 'Exportar para Obsidian'}
+        </button>
+
+        <div className={cn(styles.exportInline)}>
+          <input
+            type="text"
+            className={cn(styles.input)}
+            placeholder="Nome do deck"
+            value={ankiDeck}
+            onChange={(e) => setAnkiDeck(e.target.value)}
+            aria-label="Nome do deck Anki"
+          />
+          <button
+            type="button"
+            className={cn(styles.exportBtn)}
+            disabled={exporting !== null}
+            onClick={() => void handleAnki()}
+          >
+            {exporting === 'anki' ? 'A exportar…' : 'Exportar para Anki'}
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className={cn(styles.exportBtn)}
+          disabled={exporting !== null}
+          onClick={() => void handleCsv()}
+        >
+          {exporting === 'csv' ? 'A exportar…' : 'Exportar CSV de destaques'}
+        </button>
+      </div>
     </div>
   );
 };
@@ -149,6 +225,8 @@ const Settings: FC = () => {
       ttsVoice: s.ttsVoice,
       aiProvider: s.aiProvider,
       aiApiKey: s.aiApiKey,
+      showQuote: s.showQuote,
+      setShowQuote: s.setShowQuote,
       setTtsProvider: s.setTtsProvider,
       setTtsRate: s.setTtsRate,
       setTtsVoice: s.setTtsVoice,
@@ -276,6 +354,15 @@ const Settings: FC = () => {
           step={10}
           display={`${p.pageWidth}px`}
           onChange={p.setPageWidth}
+        />
+      </div>
+
+      <div className={cn(styles.card)}>
+        <h2 className={cn(styles.cardTitle)}>Início</h2>
+        <ToggleRow
+          label="Mostrar frase diária"
+          checked={p.showQuote}
+          onChange={p.setShowQuote}
         />
       </div>
 

@@ -40,9 +40,20 @@ export interface Preferences {
   ttsRate: number;
   ttsVoice?: string;
   syncEnabled: boolean;
+  /**
+   * Active sync provider. Only one runs at a time.
+   * 'supabase' keeps the original cloud sync; 'webdav' is the self-hosted
+   * sovereign alternative (Nextcloud, any WebDAV server). 'none' means sync
+   * is configured but disabled, OR no provider chosen yet.
+   */
+  syncProvider?: 'supabase' | 'webdav';
   supabaseUrl?: string;
   supabaseKey?: string;
+  webdavUrl?: string;
+  webdavUsername?: string;
+  webdavPassword?: string;
   aiProvider: AiProvider;
   aiApiKey?: string;
   libraryFolder?: string;
+  showQuote: boolean;
 }
