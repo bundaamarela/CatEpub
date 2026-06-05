@@ -1,6 +1,10 @@
 /**
  * useSyncTrigger — corre sync ao iniciar a app (se logged in) e debounce 30s
  * após mudanças locais. Drena fila offline ao reconectar.
+ *
+ * Suporta dois providers, mutuamente exclusivos: 'supabase' (cloud OAuth) ou
+ * 'webdav' (self-hosted). O escolhido em prefs.syncProvider determina qual
+ * pipeline corre. Quando nenhum está configurado, o hook é no-op.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -11,6 +15,11 @@ import { db } from '@/lib/db/schema';
 import { usePrefs } from '@/lib/store/prefs';
 import { drainQueue } from './queue';
 import { getSupabase, getUser, pullChanges, pushChanges } from './supabase';
+import {
+  WebDAVClient,
+  pullChanges as webdavPull,
+  pushChanges as webdavPush,
+} from './webdav';
 import type { SyncStatus } from '@/types/sync';
 
 const DEBOUNCE_MS = 30_000;
@@ -36,10 +45,25 @@ export const useSyncTrigger = (): UseSyncTriggerApi => {
   const cfg = usePrefs(
     useShallow((s) => ({
       syncEnabled: s.syncEnabled,
-      url: s.supabaseUrl,
-      key: s.supabaseKey,
+      provider: s.syncProvider,
+      supabaseUrl: s.supabaseUrl,
+      supabaseKey: s.supabaseKey,
+      webdavUrl: s.webdavUrl,
+      webdavUsername: s.webdavUsername,
+      webdavPassword: s.webdavPassword,
     })),
   );
+
+  // Default provider: supabase, for backward-compat with existing users.
+  const provider = cfg.provider ?? 'supabase';
+  const supabaseReady = cfg.syncEnabled && provider === 'supabase' && Boolean(cfg.supabaseUrl) && Boolean(cfg.supabaseKey);
+  const webdavReady =
+    cfg.syncEnabled &&
+    provider === 'webdav' &&
+    Boolean(cfg.webdavUrl) &&
+    Boolean(cfg.webdavUsername) &&
+    Boolean(cfg.webdavPassword);
+  const ready = supabaseReady || webdavReady;
 
   const [status, setStatus] = useState<SyncStatus>(() => {
     const last = readLastSync();
@@ -50,29 +74,49 @@ export const useSyncTrigger = (): UseSyncTriggerApi => {
   const inflightRef = useRef(false);
 
   const runSync = useCallback(async (): Promise<void> => {
-    if (!cfg.syncEnabled || !cfg.url || !cfg.key) return;
+    if (!ready) return;
     if (inflightRef.current) return;
     inflightRef.current = true;
     setStatus({ kind: 'syncing' });
-    const config = { url: cfg.url, key: cfg.key };
     try {
-      const sb = getSupabase(config);
-      if (!sb) throw new Error('Cliente Supabase não disponível.');
-      const user = await getUser(config);
-      if (!user) throw new Error('Sem sessão activa.');
+      if (supabaseReady) {
+        const config = { url: cfg.supabaseUrl as string, key: cfg.supabaseKey as string };
+        const sb = getSupabase(config);
+        if (!sb) throw new Error('Cliente Supabase não disponível.');
+        const user = await getUser(config);
+        if (!user) throw new Error('Sem sessão activa.');
 
-      const drain = await drainQueue({ client: sb, userId: user.id });
-      const since = readLastSync();
-      const push = await pushChanges({ cfg: config, userId: user.id, since });
-      const pull = await pullChanges({ cfg: config, userId: user.id, since });
+        const drain = await drainQueue({ client: sb, userId: user.id });
+        const since = readLastSync();
+        const push = await pushChanges({ cfg: config, userId: user.id, since });
+        const pull = await pullChanges({ cfg: config, userId: user.id, since });
 
-      const allErrors = [...drain.errors, ...push.errors, ...pull.errors];
-      if (allErrors.length > 0) {
-        setStatus({ kind: 'error', message: allErrors[0] ?? 'Erro desconhecido.' });
-      } else {
-        const now = new Date().toISOString();
-        writeLastSync(now);
-        setStatus({ kind: 'ok', lastSyncAt: now });
+        const allErrors = [...drain.errors, ...push.errors, ...pull.errors];
+        if (allErrors.length > 0) {
+          setStatus({ kind: 'error', message: allErrors[0] ?? 'Erro desconhecido.' });
+        } else {
+          const now = new Date().toISOString();
+          writeLastSync(now);
+          setStatus({ kind: 'ok', lastSyncAt: now });
+        }
+      } else if (webdavReady) {
+        const client = new WebDAVClient();
+        client.connect({
+          url: cfg.webdavUrl as string,
+          username: cfg.webdavUsername as string,
+          password: cfg.webdavPassword as string,
+        });
+        const since = readLastSync();
+        const push = await webdavPush({ client, since });
+        const pull = await webdavPull({ client });
+        const allErrors = [...push.errors, ...pull.errors];
+        if (allErrors.length > 0) {
+          setStatus({ kind: 'error', message: allErrors[0] ?? 'Erro desconhecido.' });
+        } else {
+          const now = new Date().toISOString();
+          writeLastSync(now);
+          setStatus({ kind: 'ok', lastSyncAt: now });
+        }
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -80,7 +124,16 @@ export const useSyncTrigger = (): UseSyncTriggerApi => {
     } finally {
       inflightRef.current = false;
     }
-  }, [cfg.syncEnabled, cfg.url, cfg.key]);
+  }, [
+    ready,
+    supabaseReady,
+    webdavReady,
+    cfg.supabaseUrl,
+    cfg.supabaseKey,
+    cfg.webdavUrl,
+    cfg.webdavUsername,
+    cfg.webdavPassword,
+  ]);
 
   // Drain queue on `online` event.
   useEffect(() => {
@@ -93,19 +146,17 @@ export const useSyncTrigger = (): UseSyncTriggerApi => {
   }, [runSync]);
 
   // Initial sync on mount when sync is enabled.
-  // setTimeout 0 to avoid the cascading-render warning — sync state changes
-  // belong outside the render cycle that triggered the effect.
   useEffect(() => {
-    if (!cfg.syncEnabled || !cfg.url || !cfg.key) return;
+    if (!ready) return;
     const t = setTimeout(() => {
       void runSync();
     }, 0);
     return () => clearTimeout(t);
-  }, [cfg.syncEnabled, cfg.url, cfg.key, runSync]);
+  }, [ready, runSync]);
 
   // Debounced sync after changes in highlights/notes/bookmarks/flashcards.
   useEffect(() => {
-    if (!cfg.syncEnabled || !cfg.url || !cfg.key) return;
+    if (!ready) return;
     let firstEmission = true;
     const subscription = liveQuery(async () => {
       const [h, n, b, f] = await Promise.all([
@@ -131,7 +182,7 @@ export const useSyncTrigger = (): UseSyncTriggerApi => {
       subscription.unsubscribe();
       if (debounceRef.current !== null) clearTimeout(debounceRef.current);
     };
-  }, [cfg.syncEnabled, cfg.url, cfg.key, runSync]);
+  }, [ready, runSync]);
 
   return { status, triggerSync: runSync };
 };
