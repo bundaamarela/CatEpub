@@ -4,10 +4,19 @@ import { useShallow } from 'zustand/shallow';
 import { LibraryFolderSection } from '@/components/settings/LibraryFolderSection';
 import { SyncSection } from '@/components/settings/SyncSection';
 import { cn } from '@/lib/utils/cn';
+import {
+  getQuoteForPeriod,
+  loadQuotes,
+  requestNotificationPermission,
+  scheduleQuoteNotification,
+} from '@/lib/quotes/quotes';
 import { FONT_FAMILIES, FONT_VAR, type FontFamily } from '@/lib/theme/tokens';
 import { usePrefs } from '@/lib/store/prefs';
 import type { PaginationMode, ThemeChoice } from '@/types/prefs';
 import styles from './Settings.module.css';
+
+const supportsNotifications = (): boolean =>
+  typeof window !== 'undefined' && 'Notification' in window;
 
 const PREVIEW_TEXT =
   'O leitor contempla a página como quem admira um horizonte de possibilidades infinitas.';
@@ -208,6 +217,73 @@ const SovereigntySection: FC = () => {
   );
 };
 
+const QuoteNotificationToggle: FC = () => {
+  const supported = supportsNotifications();
+  const [enabled, setEnabled] = useState(
+    () => supported && Notification.permission === 'granted',
+  );
+  const [message, setMessage] = useState<string | null>(null);
+
+  const handleChange = useCallback(
+    (next: boolean) => {
+      if (!supported) return;
+      if (!next) {
+        // Browsers don't expose a JS API to revoke permission. We can't
+        // truthfully "turn off" once granted — the only effect is hiding the
+        // visual checked state in this session.
+        setEnabled(false);
+        if (Notification.permission === 'granted') {
+          setMessage(
+            'Para desactivar definitivamente, revoga a permissão nas definições do browser.',
+          );
+        } else {
+          setMessage(null);
+        }
+        return;
+      }
+      void (async () => {
+        const granted = await requestNotificationPermission();
+        if (!granted) {
+          setEnabled(false);
+          setMessage('Permissão negada. Activa as notificações nas definições do browser.');
+          return;
+        }
+        setEnabled(true);
+        setMessage(null);
+        const quotes = await loadQuotes();
+        const quote = getQuoteForPeriod(quotes);
+        try {
+          localStorage.removeItem('catepub_last_notified_period');
+        } catch {
+          // Private mode — best effort.
+        }
+        scheduleQuoteNotification(quote);
+      })();
+    },
+    [supported],
+  );
+
+  if (!supported) return null;
+
+  return (
+    <div>
+      <label className={cn(styles.toggleRow)}>
+        <span className={cn(styles.toggleLabel)}>Notificação de sistema</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          className={cn(styles.toggle, enabled && styles.toggleOn)}
+          onClick={() => handleChange(!enabled)}
+        >
+          <span className={cn(styles.toggleThumb)} />
+        </button>
+      </label>
+      {message !== null && <p className={cn(styles.notice)}>{message}</p>}
+    </div>
+  );
+};
+
 const Settings: FC = () => {
   const p = usePrefs(
     useShallow((s) => ({
@@ -364,6 +440,7 @@ const Settings: FC = () => {
           checked={p.showQuote}
           onChange={p.setShowQuote}
         />
+        <QuoteNotificationToggle />
       </div>
 
       <div className={cn(styles.card)}>

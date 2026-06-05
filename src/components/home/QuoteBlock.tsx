@@ -4,7 +4,12 @@ import { cn } from '@/lib/utils/cn';
 import { getCurrentPeriod, getQuoteForPeriod, loadQuotes, type Quote } from '@/lib/quotes/quotes';
 import styles from './QuoteBlock.module.css';
 
-export const QuoteBlock: FC = () => {
+interface Props {
+  /** Called with the displayed quote whenever the active 8-hour period changes. */
+  onQuoteChange?: (q: Quote) => void;
+}
+
+export const QuoteBlock: FC<Props> = ({ onQuoteChange }) => {
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [period, setPeriod] = useState<number>(() => getCurrentPeriod());
 
@@ -26,9 +31,15 @@ export const QuoteBlock: FC = () => {
     return () => window.clearInterval(id);
   }, []);
 
-  if (quotes === null) return null;
+  const quote =
+    quotes !== null ? getQuoteForPeriod(quotes, period * 8 * 60 * 60 * 1000) : null;
 
-  const quote = getQuoteForPeriod(quotes, period * 8 * 60 * 60 * 1000);
+  useEffect(() => {
+    if (quote === null) return;
+    onQuoteChange?.(quote);
+  }, [quote, onQuoteChange]);
+
+  if (quote === null) return null;
 
   return (
     <figure className={cn(styles.block)}>
