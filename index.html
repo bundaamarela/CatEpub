@@ -5,6 +5,11 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#111111" />
+    <!-- Preconnect to Anthropic so the first AI call doesn't pay the TLS
+         handshake. Cheap when AI is disabled (browser drops the unused
+         connection); meaningful when the user opens chat / define / synth. -->
+    <link rel="preconnect" href="https://api.anthropic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://api.anthropic.com" />
     <title>Cat Epub</title>
   </head>
   <body>
