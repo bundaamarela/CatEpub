@@ -67,6 +67,59 @@ const Synthesis = () => {
     );
   }
 
+  const books = booksQuery.data ?? [];
+  const booksDone = books.filter((b) => b.embeddingsStatus === 'done');
+  const booksRunning = books.filter((b) => b.embeddingsStatus === 'running');
+  const noEmbeddings = booksDone.length === 0;
+
+  if (noEmbeddings) {
+    return (
+      <section className={cn(styles.page)}>
+        <div className={cn(styles.header)}>
+          <h1 className={cn(styles.title)}>Síntese</h1>
+        </div>
+        <div className={cn(styles.noAi)}>
+          <CatEmpty size={48} />
+          <p>
+            A síntese precisa de livros com embeddings gerados. Importa um livro
+            e aguarda o processamento.
+          </p>
+          {booksRunning.length > 0 ? (
+            <div style={{ width: '100%', maxWidth: 360 }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>
+                A processar {booksRunning.length} livro
+                {booksRunning.length === 1 ? '' : 's'} ·{' '}
+                {booksRunning[0]?.embeddingsProgress ?? 0}%
+              </p>
+              <div
+                style={{
+                  height: 4,
+                  background: 'var(--surface-2)',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  marginTop: 6,
+                }}
+              >
+                <div
+                  style={{
+                    height: '100%',
+                    background: 'var(--text)',
+                    width: `${booksRunning[0]?.embeddingsProgress ?? 0}%`,
+                    transition: 'width 0.3s',
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <Link to="/library" style={{ marginTop: 8 }}>
+              Ir para a biblioteca
+            </Link>
+          )}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className={cn(styles.page)}>
       <div className={cn(styles.header)}>

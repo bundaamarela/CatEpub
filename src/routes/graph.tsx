@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import * as d3 from 'd3';
 
 import { CatEmpty } from '@/components/icons';
@@ -287,6 +287,26 @@ const Graph = () => {
     );
   }
 
+  if (allHighlights.length === 0) {
+    return (
+      <div className={cn(styles.page)}>
+        <div className={cn(styles.header)}>
+          <h1 className={cn(styles.title)}>Grafo de Ideias</h1>
+        </div>
+        <div className={cn(styles.empty)}>
+          <CatEmpty size={48} />
+          <p>
+            O grafo precisa de destaques para emergir. Abre um livro, selecciona
+            texto e cria o teu primeiro destaque.
+          </p>
+          <Link to="/library" className={cn(styles.computeBtn)}>
+            Ir para a biblioteca
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (allHighlights.length < 10) {
     return (
       <div className={cn(styles.page)}>
@@ -295,8 +315,14 @@ const Graph = () => {
         </div>
         <div className={cn(styles.empty)}>
           <CatEmpty size={48} />
-          <p>Precisas de pelo menos 10 highlights para gerar o grafo.</p>
-          <p>Selecciona texto nos livros para criar anotações.</p>
+          <p>
+            Tens {allHighlights.length} destaque
+            {allHighlights.length === 1 ? '' : 's'} — precisas de pelo menos 10
+            para que o grafo seja informativo.
+          </p>
+          <Link to="/library" className={cn(styles.computeBtn)}>
+            Continuar a ler
+          </Link>
         </div>
       </div>
     );

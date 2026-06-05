@@ -42,7 +42,13 @@ const ConceptListView = () => {
         </div>
         <div className={cn(styles.empty)}>
           <CatEmpty size={48} />
-          <p>Sem conceitos ainda. Adiciona tags às tuas anotações para criar conceitos.</p>
+          <p>
+            Os conceitos emergem dos teus destaques. Adiciona tags aos destaques
+            para começar.
+          </p>
+          <Link to="/library" className={cn(styles.exportBtn)}>
+            Ir para a biblioteca
+          </Link>
         </div>
       </section>
     );
