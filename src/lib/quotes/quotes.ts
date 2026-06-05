@@ -63,3 +63,80 @@ export const loadQuotes = async (): Promise<Quote[]> => {
 };
 
 export const PERIOD_MS_EXPORT = PERIOD_MS;
+
+// ─── Web Notifications ────────────────────────────────────────────────────
+
+const LAST_NOTIFIED_KEY = 'catepub_last_notified_period';
+const NOTIFICATION_BODY_MAX = 120;
+
+/**
+ * Browsers without the Notification API (older Safari, locked-down PWA
+ * shells) — we just no-op in that case.
+ */
+const notificationsSupported = (): boolean =>
+  typeof window !== 'undefined' && 'Notification' in window;
+
+/**
+ * Asks the browser for permission to display Web Notifications. Resolves
+ * `true` when the user grants, `false` for denied/default/unsupported.
+ */
+export const requestNotificationPermission = async (): Promise<boolean> => {
+  if (!notificationsSupported()) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  try {
+    const result = await Notification.requestPermission();
+    return result === 'granted';
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Fires a Web Notification for the given quote if (a) permission is
+ * granted and (b) we haven't already notified in the current 8-hour
+ * period. Once-per-period is enforced via localStorage so even if the
+ * Home tab is open across multiple period boundaries, the user gets a
+ * single ping per window.
+ *
+ * No-op outside the browser, when permission isn't granted, or when the
+ * Notifications API is missing.
+ */
+export const scheduleQuoteNotification = (
+  quote: Quote,
+  now: number = Date.now(),
+): void => {
+  if (!notificationsSupported()) return;
+  if (Notification.permission !== 'granted') return;
+
+  const period = getCurrentPeriod(now);
+  let lastNotified: number | null = null;
+  try {
+    const raw = localStorage.getItem(LAST_NOTIFIED_KEY);
+    if (raw !== null) {
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed)) lastNotified = parsed;
+    }
+  } catch {
+    // localStorage unavailable (private mode) — treat as never notified.
+  }
+  if (lastNotified === period) return;
+
+  const body =
+    quote.text.length > NOTIFICATION_BODY_MAX
+      ? `${quote.text.slice(0, NOTIFICATION_BODY_MAX).trimEnd()}…`
+      : quote.text;
+
+  try {
+    new Notification(quote.author, { body, icon: '/favicon.ico' });
+  } catch {
+    return;
+  }
+  try {
+    localStorage.setItem(LAST_NOTIFIED_KEY, String(period));
+  } catch {
+    // localStorage write failed — accept the duplicate-notification risk.
+  }
+};
+
+export const LAST_NOTIFIED_KEY_EXPORT = LAST_NOTIFIED_KEY;

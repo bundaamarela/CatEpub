@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { ContinueReading } from '@/components/home/ContinueReading';
@@ -10,9 +10,16 @@ import { StatsBlock } from '@/components/home/StatsBlock';
 import { Welcome } from '@/components/home/Welcome';
 import { isWelcomeDismissed } from '@/components/home/welcome-state';
 import { CatEmpty } from '@/components/icons';
+import {
+  requestNotificationPermission,
+  scheduleQuoteNotification,
+  type Quote,
+} from '@/lib/quotes/quotes';
 import { cn } from '@/lib/utils/cn';
 import { usePrefs } from '@/lib/store/prefs';
 import { useBooksWithProgress } from '@/lib/store/library';
+
+const FIRST_VISIT_KEY = 'catepub_notification_asked';
 
 const Home = () => {
   const { data, isLoading } = useBooksWithProgress();
@@ -20,6 +27,28 @@ const Home = () => {
   const showQuote = usePrefs((s) => s.showQuote);
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => isWelcomeDismissed());
   const showWelcome = !isLoading && books.length === 0 && !welcomeDismissed;
+
+  const handleQuoteChange = useCallback((quote: Quote) => {
+    void (async () => {
+      const alreadyAsked = ((): boolean => {
+        try {
+          return localStorage.getItem(FIRST_VISIT_KEY) !== null;
+        } catch {
+          // Private mode — pretend we already asked to avoid retrying.
+          return true;
+        }
+      })();
+      if (!alreadyAsked) {
+        try {
+          localStorage.setItem(FIRST_VISIT_KEY, '1');
+        } catch {
+          // Private mode — request anyway; failure is silent.
+        }
+        await requestNotificationPermission();
+      }
+      scheduleQuoteNotification(quote);
+    })();
+  }, []);
 
   return (
     <div className={cn(styles.scroll)}>
@@ -33,7 +62,7 @@ const Home = () => {
         {!isLoading && !showWelcome && (
           <>
             <StatsBlock books={books} />
-            {showQuote && <QuoteBlock />}
+            {showQuote && <QuoteBlock onQuoteChange={handleQuoteChange} />}
             <ContinueReading books={books} />
             <RecentlyRead books={books} />
 

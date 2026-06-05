@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getCurrentPeriod, getQuoteForPeriod, loadQuotes, type Quote } from '@/lib/quotes/quotes';
+import {
+  getCurrentPeriod,
+  getQuoteForPeriod,
+  loadQuotes,
+  requestNotificationPermission,
+  scheduleQuoteNotification,
+  type Quote,
+} from '@/lib/quotes/quotes';
 
 const PERIOD = 8 * 60 * 60 * 1000;
 
@@ -108,5 +115,200 @@ describe('loadQuotes', () => {
     const out = await loadQuotes();
     expect(out).toHaveLength(1);
     expect(out[0]!.text).toBe('ok');
+  });
+});
+
+interface MockNotification {
+  title: string;
+  options: NotificationOptions | undefined;
+}
+
+interface NotificationCtor {
+  (this: unknown, title: string, options?: NotificationOptions): void;
+  permission: NotificationPermission;
+  requestPermission: () => Promise<NotificationPermission>;
+}
+
+const installNotificationMock = (
+  permission: NotificationPermission,
+  requestImpl?: () => Promise<NotificationPermission>,
+): { calls: MockNotification[]; restore: () => void; setPermission: (p: NotificationPermission) => void } => {
+  const calls: MockNotification[] = [];
+  const original = (globalThis as { Notification?: unknown }).Notification;
+
+  const ctor = function (this: unknown, title: string, options?: NotificationOptions): void {
+    calls.push({ title, options });
+  } as unknown as NotificationCtor;
+  ctor.permission = permission;
+  ctor.requestPermission = requestImpl ?? (async () => 'denied' as NotificationPermission);
+
+  Object.defineProperty(globalThis, 'Notification', {
+    configurable: true,
+    writable: true,
+    value: ctor,
+  });
+
+  return {
+    calls,
+    setPermission: (p) => {
+      ctor.permission = p;
+    },
+    restore: () => {
+      if (original === undefined) {
+        delete (globalThis as { Notification?: unknown }).Notification;
+      } else {
+        Object.defineProperty(globalThis, 'Notification', {
+          configurable: true,
+          writable: true,
+          value: original,
+        });
+      }
+    },
+  };
+};
+
+const quote = (overrides: Partial<Quote> = {}): Quote => ({
+  text: 'Texto da frase',
+  author: 'Autor',
+  ...overrides,
+});
+
+describe('requestNotificationPermission', () => {
+  let restore: (() => void) | undefined;
+  afterEach(() => {
+    restore?.();
+    restore = undefined;
+  });
+
+  it('returns true when permission is already granted (no prompt)', async () => {
+    const ask = vi.fn(async () => 'denied' as NotificationPermission);
+    const mock = installNotificationMock('granted', ask);
+    restore = mock.restore;
+
+    expect(await requestNotificationPermission()).toBe(true);
+    expect(ask).not.toHaveBeenCalled();
+  });
+
+  it('returns false immediately when permission is denied', async () => {
+    const ask = vi.fn(async () => 'granted' as NotificationPermission);
+    const mock = installNotificationMock('denied', ask);
+    restore = mock.restore;
+
+    expect(await requestNotificationPermission()).toBe(false);
+    expect(ask).not.toHaveBeenCalled();
+  });
+
+  it('asks the user when permission is default and reflects the answer', async () => {
+    const ask = vi.fn(async () => 'granted' as NotificationPermission);
+    const mock = installNotificationMock('default', ask);
+    restore = mock.restore;
+
+    expect(await requestNotificationPermission()).toBe(true);
+    expect(ask).toHaveBeenCalledOnce();
+  });
+
+  it('returns false when Notification API is missing', async () => {
+    const original = (globalThis as { Notification?: unknown }).Notification;
+    delete (globalThis as { Notification?: unknown }).Notification;
+    restore = () => {
+      if (original !== undefined) {
+        Object.defineProperty(globalThis, 'Notification', {
+          configurable: true,
+          writable: true,
+          value: original,
+        });
+      }
+    };
+
+    expect(await requestNotificationPermission()).toBe(false);
+  });
+});
+
+describe('scheduleQuoteNotification', () => {
+  let restore: (() => void) | undefined;
+  beforeEach(() => {
+    localStorage.clear();
+  });
+  afterEach(() => {
+    restore?.();
+    restore = undefined;
+    localStorage.clear();
+  });
+
+  it('fires a notification with author as title and quote text as body', () => {
+    const mock = installNotificationMock('granted');
+    restore = mock.restore;
+    const q = quote({ author: 'Séneca', text: 'Brevis ipsa vita est sed malis fit longior.' });
+
+    scheduleQuoteNotification(q, 1_000);
+    expect(mock.calls).toHaveLength(1);
+    expect(mock.calls[0]!.title).toBe('Séneca');
+    expect(mock.calls[0]!.options?.body).toBe('Brevis ipsa vita est sed malis fit longior.');
+    expect(mock.calls[0]!.options?.icon).toBe('/favicon.ico');
+  });
+
+  it('truncates body to 120 chars with an ellipsis when longer', () => {
+    const mock = installNotificationMock('granted');
+    restore = mock.restore;
+    const long = 'a'.repeat(200);
+    scheduleQuoteNotification(quote({ text: long }), 1_000);
+
+    const body = mock.calls[0]!.options?.body ?? '';
+    expect(body.length).toBe(121); // 120 chars + ellipsis
+    expect(body.endsWith('…')).toBe(true);
+    expect(body.startsWith('a'.repeat(120))).toBe(true);
+  });
+
+  it('does not truncate body when it is exactly 120 chars', () => {
+    const mock = installNotificationMock('granted');
+    restore = mock.restore;
+    const exact = 'b'.repeat(120);
+    scheduleQuoteNotification(quote({ text: exact }), 1_000);
+
+    expect(mock.calls[0]!.options?.body).toBe(exact);
+  });
+
+  it('only fires once per 8-hour period even if called repeatedly', () => {
+    const mock = installNotificationMock('granted');
+    restore = mock.restore;
+    const insidePeriod = 5_000;
+    const stillInsidePeriod = 7_999_999;
+
+    scheduleQuoteNotification(quote({ text: 'first' }), insidePeriod);
+    scheduleQuoteNotification(quote({ text: 'second' }), stillInsidePeriod);
+    expect(mock.calls).toHaveLength(1);
+  });
+
+  it('fires again in the next 8-hour period', () => {
+    const mock = installNotificationMock('granted');
+    restore = mock.restore;
+    const PERIOD_LEN = 8 * 60 * 60 * 1000;
+
+    scheduleQuoteNotification(quote({ text: 'window-A' }), 1_000);
+    scheduleQuoteNotification(quote({ text: 'window-B' }), PERIOD_LEN + 1_000);
+    expect(mock.calls).toHaveLength(2);
+  });
+
+  it('is a no-op when permission is not granted', () => {
+    const mock = installNotificationMock('default');
+    restore = mock.restore;
+    scheduleQuoteNotification(quote(), 1_000);
+    expect(mock.calls).toHaveLength(0);
+  });
+
+  it('is a no-op when the Notification API is missing', () => {
+    const original = (globalThis as { Notification?: unknown }).Notification;
+    delete (globalThis as { Notification?: unknown }).Notification;
+    restore = () => {
+      if (original !== undefined) {
+        Object.defineProperty(globalThis, 'Notification', {
+          configurable: true,
+          writable: true,
+          value: original,
+        });
+      }
+    };
+    // Should not throw.
+    expect(() => scheduleQuoteNotification(quote(), 1_000)).not.toThrow();
   });
 });
