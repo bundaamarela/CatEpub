@@ -1,0 +1,34 @@
+/* Tap zones para navegação por toque em mobile/tablet (modo paginado).
+   Sobrepõem-se ao iframe da página para que o utilizador possa avançar
+   tocando nas margens — o centro 40% mantém o comportamento do container
+   (toggle de chrome).
+
+   Cobrem 30% do viewport à esquerda e à direita, altura total. Ficam abaixo
+   da topbar (z-index 1) para que esta continue clicável. Sem fundo visível. */
+.tapZoneLeft,
+.tapZoneRight {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30vw;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+}
+
+.tapZoneLeft {
+  left: 0;
+}
+
+.tapZoneRight {
+  right: 0;
+}
+
+.tapZoneLeft:focus-visible,
+.tapZoneRight:focus-visible {
+  outline: 2px dashed var(--border-strong);
+  outline-offset: -8px;
+}

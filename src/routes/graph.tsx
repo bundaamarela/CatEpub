@@ -14,6 +14,7 @@ import { recordStep } from '@/lib/knowledge/trails';
 import { useAllHighlights } from '@/lib/store/highlights';
 import { useBooks } from '@/lib/store/library';
 import { cn } from '@/lib/utils/cn';
+import { useIsSmallScreen } from '@/lib/utils/useBreakpoint';
 import type { Book } from '@/types/book';
 import type { Highlight } from '@/types/highlight';
 import styles from './Graph.module.css';
@@ -37,6 +38,7 @@ const Graph = () => {
   const booksQuery = useBooks();
   const highlightsQuery = useAllHighlights();
   const navigate = useNavigate();
+  const isSmallScreen = useIsSmallScreen();
 
   const svgRef = useRef<SVGSVGElement>(null);
   const [selectedNode, setSelectedNode] = useState<SidebarInfo | null>(null);
@@ -269,6 +271,21 @@ const Graph = () => {
       simulation.stop();
     };
   }, [filteredData, bookIds, allHighlights, navigate, contradictionMap]);
+
+  if (isSmallScreen) {
+    return (
+      <div className={cn(styles.page)}>
+        <div className={cn(styles.header)}>
+          <h1 className={cn(styles.title)}>Grafo de Ideias</h1>
+        </div>
+        <div className={cn(styles.empty)}>
+          <CatEmpty size={48} />
+          <p>O grafo está disponível no tablet e desktop.</p>
+          <p>A visualização precisa de pelo menos 600 px de largura para ser legível.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (allHighlights.length < 10) {
     return (

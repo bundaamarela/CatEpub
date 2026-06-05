@@ -47,9 +47,12 @@ import { usePrefs } from '@/lib/store/prefs';
 import { readColorToken } from '@/lib/theme/colors';
 import { useAutoTheme } from '@/lib/theme/useAutoTheme';
 import { WebSpeechTTS } from '@/lib/tts/webspeech';
+import { useBreakpoint } from '@/lib/utils/useBreakpoint';
+import { cn } from '@/lib/utils/cn';
 import { debounce } from '@/lib/utils/debounce';
 import type { Highlight, HighlightColor } from '@/types/highlight';
 import type { ReadingPosition } from '@/types/book';
+import styles from './Reader.module.css';
 
 type Panel = 'notes' | 'settings' | 'toc' | 'search' | 'chat' | null;
 
@@ -114,6 +117,7 @@ const popoverPositionFor = (sel: HighlightSelection): PopoverPosition | null => 
 const Reader = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const { isMobile } = useBreakpoint();
   const deepLinkCfi =
     location.state &&
     typeof location.state === 'object' &&
@@ -698,6 +702,34 @@ const Reader = () => {
         onReady={handleReady}
         onError={handleError}
       />
+
+      {/* Tap zones (mobile/tablet, paginated mode): left 30% → página anterior,
+          right 30% → página seguinte. Centro 40% mantém o toggle de chrome
+          através do handler do container. */}
+      {isMobile && prefs.paginationMode === 'paginated' && (
+        <>
+          <button
+            type="button"
+            className={cn(styles.tapZoneLeft)}
+            data-testid="tap-zone-prev"
+            aria-label="Página anterior"
+            onClick={(e) => {
+              e.stopPropagation();
+              void rendererRef.current?.prevPage();
+            }}
+          />
+          <button
+            type="button"
+            className={cn(styles.tapZoneRight)}
+            data-testid="tap-zone-next"
+            aria-label="Página seguinte"
+            onClick={(e) => {
+              e.stopPropagation();
+              void rendererRef.current?.nextPage();
+            }}
+          />
+        </>
+      )}
 
       <HighlightToolbar
         selection={selection}
